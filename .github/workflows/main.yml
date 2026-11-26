@@ -1,0 +1,55 @@
+
+name: Build DUB LEDGER WINDOWS ISO
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 360
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            unzip xorriso squashfs-tools \
+            debootstrap live-build \
+            grub-pc-bin grub-efi-amd64-bin \
+            mtools dosfstools isolinux \
+            syslinux-common rsync wget curl git
+
+      - name: Extract DUB LEDGER Build Kit
+        run: |
+          mkdir -p buildkit
+          ZIP=$(find . -maxdepth 1 -iname '*.zip' | head -n 1)
+          test -n "$ZIP"
+          unzip -q "$ZIP" -d buildkit
+          find buildkit -name BUILD-LINUX.sh
+
+      - name: Build ISO
+        run: |
+          SCRIPT=$(find buildkit -name BUILD-LINUX.sh | head -n 1)
+          test -n "$SCRIPT"
+          cd "$(dirname "$SCRIPT")"
+          chmod +x BUILD-LINUX.sh
+          sudo ./BUILD-LINUX.sh
+
+      - name: Upload ISO
+        uses: actions/upload-artifact@v4
+        with:
+          name: DUB-LEDGER-WINDOWS-1.0-ISO
+          path: |
+            **/*.iso
+          if-no-files-found: error
+          retention-days: 14
