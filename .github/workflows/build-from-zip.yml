@@ -1,0 +1,69 @@
+name: Build DUB Ledger ISO from uploaded ZIP
+
+on:
+  push:
+    paths:
+      - '*.zip'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 360
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Extract uploaded build kit
+        shell: bash
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          archives=( *.zip )
+          if [ "${#archives[@]}" -eq 0 ]; then
+            echo "No ZIP file found in repository root."
+            exit 1
+          fi
+          mkdir -p /tmp/dub-ledger-kit
+          unzip -q "${archives[0]}" -d /tmp/dub-ledger-kit
+          kit_script="$(find /tmp/dub-ledger-kit -type f -name BUILD-LINUX.sh -print -quit)"
+          if [ -z "$kit_script" ]; then
+            echo "BUILD-LINUX.sh was not found inside the ZIP."
+            find /tmp/dub-ledger-kit -maxdepth 3 -type f -print
+            exit 1
+          fi
+          kit_root="$(dirname "$kit_script")"
+          cp -a "$kit_root"/. "$GITHUB_WORKSPACE"/
+          test -f "$GITHUB_WORKSPACE/BUILD-LINUX.sh"
+
+      - name: Install Linux live-build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y live-build debootstrap squashfs-tools xorriso isolinux syslinux-common             dosfstools mtools grub-pc-bin grub-efi-amd64-bin git curl wget ca-certificates
+
+      - name: Build ISO
+        shell: bash
+        run: |
+          set -euo pipefail
+          chmod +x BUILD-LINUX.sh
+          sudo ./BUILD-LINUX.sh
+
+      - name: Collect ISO and checksums
+        if: always()
+        shell: bash
+        run: |
+          mkdir -p output
+          find . -type f -iname '*.iso' -not -path './output/*' -exec cp -v {} output/ \; || true
+          find output -type f -name '*.iso' -exec sha256sum {} \; > output/SHA256SUMS.txt || true
+
+      - name: Upload ISO artifact
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: DUB-LEDGER-WINDOWS-ISO
+          path: output/*
+          if-no-files-found: error
+          retention-days: 7
