@@ -27,3 +27,5 @@ C پارٹیشن پر انسٹال کرنے کا عمومی طریقہ
 
 تصدیق
 یہ گائیڈ خودکار whole-disk installation کو منع کرتی ہے، لیکن ISO کی کامیاب build یا فائلوں کی جانچ physical computer پر محفوظ installation کا ثبوت نہیں۔ پہلے مکمل backup بنائیں اور partition summary کی تصویر/تفصیل ماہر کو دکھا کر تصدیق کریں۔
+
+Build version: DUB LEDGER 13-1. ISO label and artifact name should both identify version 13-1.
