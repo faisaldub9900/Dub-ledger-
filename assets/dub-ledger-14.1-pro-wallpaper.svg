@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080">
+<defs>
+ <linearGradient id="bg" x2="0" y2="1"><stop stop-color="#02091d"/><stop offset=".55" stop-color="#071d42"/><stop offset="1" stop-color="#010611"/></linearGradient>
+ <radialGradient id="halo"><stop stop-color="#167cff" stop-opacity=".45"/><stop offset=".55" stop-color="#0750a0" stop-opacity=".18"/><stop offset="1" stop-color="#00102a" stop-opacity="0"/></radialGradient>
+ <radialGradient id="globe" cx=".32" cy=".25"><stop stop-color="#a9eaff"/><stop offset=".18" stop-color="#278ce9"/><stop offset=".62" stop-color="#06427f"/><stop offset="1" stop-color="#020c28"/></radialGradient>
+ <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#fff5bd"/><stop offset=".25" stop-color="#dcae43"/><stop offset=".55" stop-color="#fff0a0"/><stop offset=".8" stop-color="#9b6418"/><stop offset="1" stop-color="#ffdc72"/></linearGradient>
+ <linearGradient id="blue" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#c6f5ff"/><stop offset=".3" stop-color="#258cff"/><stop offset=".7" stop-color="#07438e"/><stop offset="1" stop-color="#021735"/></linearGradient>
+ <filter id="glow" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="16" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+ <filter id="shadow" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="10"/></filter>
+ <pattern id="stars" width="180" height="130" patternUnits="userSpaceOnUse"><circle cx="18" cy="22" r="1.5" fill="#d6eeff"/><circle cx="94" cy="72" r="1" fill="#fff0bf"/><circle cx="151" cy="34" r="1.2" fill="#9ccfff"/><circle cx="55" cy="115" r=".8" fill="#fff"/></pattern>
+</defs>
+<rect width="1920" height="1080" fill="url(#bg)"/><rect width="1920" height="1080" fill="url(#stars)" opacity=".7"/>
+<ellipse cx="960" cy="470" rx="710" ry="600" fill="url(#halo)"/>
+<g opacity=".55" fill="none" stroke="#dba943"><ellipse cx="960" cy="425" rx="500" ry="165" transform="rotate(-18 960 425)" stroke-width="3"/><ellipse cx="960" cy="425" rx="560" ry="205" transform="rotate(18 960 425)" stroke-width="1.5"/></g>
+<g transform="translate(960 350)" filter="url(#glow)">
+ <circle r="190" fill="url(#globe)" stroke="url(#gold)" stroke-width="7"/>
+ <path d="M-120 -90 Q-70 -145 -12 -120 L30 -80 12 -30 -45 -18 -66 28 -115 14 -145 -30Z M25 -145 L90 -125 135 -70 95 -28 48 -40 10 -75Z M-10 38 L40 15 90 40 110 102 60 140 0 112 -25 62Z" fill="#42b5b0" opacity=".52" stroke="#b5e9df" stroke-width="2"/>
+ <ellipse rx="210" ry="70" fill="none" stroke="url(#gold)" stroke-width="13" transform="rotate(-24)"/>
+ <ellipse rx="230" ry="78" fill="none" stroke="#43b5ff" stroke-width="4" transform="rotate(24)" opacity=".8"/>
+ <path d="M-110 -192 L-85 -265 -35 -220 0 -300 35 -220 85 -265 110 -192Z" fill="url(#gold)" stroke="#fff0ad" stroke-width="6"/>
+ <path d="M-110 -192 Q0 -225 110 -192 L95 -166 Q0 -190 -95 -166Z" fill="#8d5c1b" stroke="#ffe8a0" stroke-width="5"/>
+ <circle cx="0" cy="-222" r="18" fill="#7ce6ff" stroke="#fff4bd" stroke-width="5"/>
+ <circle cx="-74" cy="-205" r="10" fill="#56baff"/><circle cx="74" cy="-205" r="10" fill="#56baff"/>
+</g>
+<g text-anchor="middle" font-family="DejaVu Sans,Arial,sans-serif">
+ <text x="960" y="690" font-size="92" font-weight="900" letter-spacing="8" fill="#eaf7ff" stroke="#2d8fe9" stroke-width="2" filter="url(#glow)">DUB LEDGER</text>
+ <text x="960" y="800" font-size="108" font-weight="900" letter-spacing="10" fill="url(#gold)" stroke="#6b4518" stroke-width="2">14.1 PRO</text>
+ <path d="M520 840 H1400" stroke="url(#gold)" stroke-width="3"/>
+ <text x="960" y="895" font-size="34" font-weight="600" letter-spacing="4" fill="#fff0b7">DEVELOPER: SHAKEEL FAYSAL DUB</text>
+ <text x="960" y="970" font-size="22" letter-spacing="5" fill="#8fcaff">DEBIAN LINUX • 64-BIT</text>
+</g>
+<g fill="#102f59" stroke="#d3a34a" stroke-width="3" opacity=".8"><path d="M0 970 L0 850 90 790 170 850 240 810 330 880 410 820 500 930 500 1080 0 1080Z"/><path d="M1420 1080 L1420 900 1500 830 1580 875 1650 790 1740 870 1820 820 1920 900 1920 1080Z"/></g>
+<path d="M0 1030 Q480 940 960 1000 T1920 980 V1080 H0Z" fill="#020812" opacity=".65"/>
+</svg>
