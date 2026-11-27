@@ -1,0 +1,351 @@
+name: Build DUB LEDGER 14.01 ISO
+
+on:
+  push:
+    branches:
+      - dub-ledger-14.01
+    paths:
+      - '.github/workflows/build-dub-ledger-14.01.yml'
+      - '*.zip'
+      - 'DUB-LEDGER-14.01-INSTALL-GUIDE-URDU.txt'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    container:
+      image: debian:trixie
+      options: --privileged
+    timeout-minutes: 360
+
+    steps:
+      - name: Checkout DUB LEDGER 14.01 source
+        uses: actions/checkout@v4
+
+      - name: Install ISO build tools
+        shell: bash
+        run: |
+          set -euxo pipefail
+          apt-get update
+          apt-get install -y \
+            unzip xorriso squashfs-tools debootstrap live-build \
+            grub-pc-bin grub-efi-amd64-bin mtools dosfstools isolinux \
+            syslinux-common rsync wget curl git ca-certificates
+
+      - name: Extract and prepare the original build kit
+        shell: bash
+        run: |
+          set -euxo pipefail
+          mapfile -t archives < <(find . -maxdepth 1 -type f -iname '*.zip' -print | sort)
+          test "${#archives[@]}" -eq 1
+          mkdir -p buildkit
+          unzip -q "${archives[0]}" -d buildkit
+          SCRIPT="$(find buildkit -type f -name BUILD-LINUX.sh -print -quit)"
+          test -n "$SCRIPT"
+          BUILD_DIR="$(dirname "$SCRIPT")"
+          echo "BUILD_DIR=$BUILD_DIR" >> "$GITHUB_ENV"
+          test -f "$BUILD_DIR/auto/config"
+          grep -q -- '--debian-installer live' "$BUILD_DIR/auto/config"
+          grep -q 'task-xfce-desktop' "$BUILD_DIR/config/package-lists/dub-ledger.list.chroot"
+
+      - name: Apply DUB LEDGER 14.01 branding and network packages
+        shell: bash
+        run: |
+          set -euxo pipefail
+          mkdir -p "$BUILD_DIR/config/package-lists"
+          mkdir -p "$BUILD_DIR/config/includes.chroot/etc" "$BUILD_DIR/config/includes.chroot/etc/default"
+          mkdir -p "$BUILD_DIR/config/includes.chroot/etc/skel/Desktop"
+          mkdir -p "$BUILD_DIR/config/preseed" "$BUILD_DIR/config/includes.chroot/etc"
+          printf '%s\n' 'en_US.UTF-8 UTF-8' > "$BUILD_DIR/config/includes.chroot/etc/locale.gen"
+          printf '%s\n' 'LANG=en_US.UTF-8' 'LANGUAGE=en_US:en' > "$BUILD_DIR/config/includes.chroot/etc/default/locale"
+          cat > "$BUILD_DIR/config/preseed/dub-ledger-14.01-locale.cfg" <<'PRESEED'
+          d-i debian-installer/locale string en_US.UTF-8
+          d-i debian-installer/language string en
+          d-i debian-installer/country string US
+          d-i localechooser/supported-locales multiselect en_US.UTF-8
+          d-i keyboard-configuration/xkb-keymap select us
+          d-i keyboard-configuration/variantcode string
+          d-i console-setup/ask_detect boolean false
+          d-i console-setup/layoutcode string us
+          PRESEED
+          cat > "$BUILD_DIR/config/hooks/normal/0600-dub-ledger-en-us.hook.chroot" <<'HOOK'
+          #!/bin/sh
+          set -e
+          printf '%s\n' 'en_US.UTF-8 UTF-8' > /etc/locale.gen
+          locale-gen
+          update-locale LANG=en_US.UTF-8 LANGUAGE=en_US:en
+          HOOK
+          chmod +x "$BUILD_DIR/config/hooks/normal/0600-dub-ledger-en-us.hook.chroot"
+          mkdir -p "$BUILD_DIR/config/includes.chroot/etc/skel/.config/xfce4/xfconf/xfce-perchannel-xml"
+          cat > "$BUILD_DIR/config/package-lists/dub-ledger-14.01-network.list.chroot" <<'PACKAGES'
+          network-manager
+          network-manager-gnome
+          wpasupplicant
+          wireless-tools
+          iw
+          rfkill
+          modemmanager
+          ppp
+          usb-modeswitch
+          bluez
+          blueman
+          firmware-linux
+          firmware-linux-nonfree
+          firmware-misc-nonfree
+          firmware-iwlwifi
+          firmware-realtek
+          firmware-atheros
+          firmware-brcm80211
+          firmware-mediatek
+          arc-theme
+          papirus-icon-theme
+          xfce4-whiskermenu-plugin
+          fonts-noto
+          fonts-noto-color-emoji
+          locales
+          keyboard-configuration
+          console-setup
+          PACKAGES
+          cat > "$BUILD_DIR/config/includes.chroot/etc/os-release" <<'OS'
+          PRETTY_NAME="DUB LEDGER 14.01"
+          NAME="DUB LEDGER"
+          VERSION="14.01"
+          VERSION_ID="14.01"
+          ID=dub-ledger
+          ID_LIKE=debian
+          HOME_URL="https://github.com/faisaldub9900/Dub-ledger-"
+          SUPPORT_URL="https://github.com/faisaldub9900/Dub-ledger-/issues"
+          OS
+          cat > "$BUILD_DIR/config/includes.chroot/etc/skel/Desktop/DUB-LEDGER-14.01-INSTALLATION-IMPORTANT.txt" <<'NOTICE'
+          DUB LEDGER 14.01 — IMPORTANT INSTALLATION SAFETY
+
+          This system is Debian GNU/Linux based. It is NOT Microsoft Windows.
+          Back up important files before installing.
+
+          To keep other partitions:
+          1. Boot the USB and choose the graphical Install option.
+          2. Choose MANUAL partitioning. NEVER choose "Guided - use entire disk".
+          3. Identify the intended former Windows C: partition by disk, size and filesystem.
+             Linux does not use Windows C:/D:/E:/R: drive letters.
+          4. Set only the intended target partition as the root filesystem mounted at /,
+             and mark ONLY that partition to be formatted.
+          5. Do not format or delete the partitions containing D:, E: or R: data.
+          6. On UEFI systems, select the existing EFI System Partition as /boot/efi
+             WITHOUT formatting it. The installer may add its own boot files there.
+          7. Review the final partition-change summary carefully. Cancel if any
+             non-target data partition is listed for formatting or deletion.
+
+          IMPORTANT: Installing to the former C: partition erases Windows and all
+          files on that C: partition. A partition layout, installer screen and
+          hardware-specific test are required before installation can be considered safe.
+          If unsure, stop and ask for help. Keep a separate backup.
+          NOTICE
+          cat > "$BUILD_DIR/config/includes.chroot/etc/skel/.config/xfce4/xfconf/xfce-perchannel-xml/xfce4-desktop.xml" <<'XFCE'
+          <?xml version="1.0" encoding="UTF-8"?>
+          <channel name="xfce4-desktop" version="1.0">
+            <property name="backdrop" type="empty">
+              <property name="screen0" type="empty">
+                <property name="monitor0" type="empty">
+                  <property name="workspace0" type="empty">
+                    <property name="last-image" type="string" value="/usr/share/backgrounds/dub-ledger/dub-ledger-desktop.png"/>
+                    <property name="image-style" type="int" value="5"/>
+                  </property>
+                </property>
+              </property>
+            </property>
+          </channel>
+          XFCE
+          cat > "$BUILD_DIR/config/includes.chroot/etc/skel/.config/xfce4/xfconf/xfce-perchannel-xml/xsettings.xml" <<'XFCE'
+          <?xml version="1.0" encoding="UTF-8"?>
+          <channel name="xsettings" version="1.0">
+            <property name="Net" type="empty">
+              <property name="ThemeName" type="string" value="Arc-Dark"/>
+              <property name="IconThemeName" type="string" value="Papirus-Dark"/>
+            </property>
+            <property name="Xft" type="empty">
+              <property name="DPI" type="int" value="-1"/>
+            </property>
+          </channel>
+          XFCE
+          BRAND_HOOK="$BUILD_DIR/config/hooks/normal/0500-dub-ledger-branding.hook.chroot"
+          if [ -f "$BRAND_HOOK" ]; then
+            sed -i 's/DUB LEDGER WINDOWS 1.0/DUB LEDGER 14.01/g' "$BRAND_HOOK"
+          fi
+          # Remove unavailable package references from the original Trixie package list.
+          find "$BUILD_DIR/config/package-lists" -type f -exec sed -i -E 's/(^|[[:space:]])neofetch([[:space:]]|$)/ /g' {} +
+          if grep -Rni neofetch "$BUILD_DIR/config/package-lists"; then
+            echo "Unavailable neofetch package reference remains."
+            exit 1
+          fi
+
+      - name: Patch live-build configuration recursion
+        shell: bash
+        run: |
+          set -euxo pipefail
+          AUTO_CONFIG="$BUILD_DIR/auto/config"
+          sed -i -E 's/^([[:space:]]*)lb[[:space:]]+config([[:space:]]|$)/\1lb config noauto\2/' "$AUTO_CONFIG"
+          chmod +x "$AUTO_CONFIG"
+          grep -q 'lb config noauto' "$AUTO_CONFIG"
+          sed -i 's/DUB LEDGER WINDOWS/DUB LEDGER 14.01/g' "$AUTO_CONFIG"
+          sed -i 's/DUB_LEDGER/DUB_LEDGER_14_01/g' "$AUTO_CONFIG"
+          grep -q 'DUB LEDGER 14.01' "$AUTO_CONFIG"
+
+      - name: Add download managers
+        shell: bash
+        run: |
+          set -euxo pipefail
+          cat > "$BUILD_DIR/config/package-lists/dub-ledger-14.01-downloaders.list.chroot" <<'PACKAGES'
+          video-downloader
+          yt-dlp
+          aria2
+          flatpak
+          xdg-desktop-portal
+          xdg-desktop-portal-gtk
+          PACKAGES
+          cat > "$BUILD_DIR/config/hooks/normal/0700-dub-ledger-xdm.hook.chroot" <<'HOOK'
+          #!/bin/sh
+          set -eu
+          DEB=/tmp/xdm-app_9.0.12_amd64.deb
+          URL=https://github.com/subhra74/xdm/releases/download/9.0.12/xdm-app_9.0.12_amd64.deb
+          EXPECTED=ba9099fe8becb316e17f9de7eb24086f83a573a2dd44d19ca8d12d7ec5c978f1
+          wget -q "$URL" -O "$DEB"
+          echo "$EXPECTED  $DEB" | sha256sum -c -
+          apt-get update
+          apt-get install -y "$DEB"
+          rm -f "$DEB"
+          HOOK
+          chmod +x "$BUILD_DIR/config/hooks/normal/0700-dub-ledger-xdm.hook.chroot"
+
+      - name: Build DUB LEDGER 14.01 ISO
+        shell: bash
+        run: |
+          set -euxo pipefail
+          cd "$BUILD_DIR"
+          chmod +x BUILD-LINUX.sh
+          ./BUILD-LINUX.sh
+          ISO="$(find . -maxdepth 1 -type f -iname '*.iso' -print | sort | head -n 1)"
+          test -n "$ISO"
+          mkdir -p "$GITHUB_WORKSPACE/output"
+          cp "$ISO" "$GITHUB_WORKSPACE/output/DUB-LEDGER-14.01-amd64.iso"
+          cd "$GITHUB_WORKSPACE"
+          sha256sum output/DUB-LEDGER-14.01-amd64.iso > output/SHA256SUMS.txt
+          cp DUB-LEDGER-14.01-INSTALL-GUIDE-URDU.txt output/
+
+      - name: Validate OS identity, installer media and boot metadata
+        shell: bash
+        run: |
+          set -euxo pipefail
+          ISO="$GITHUB_WORKSPACE/output/DUB-LEDGER-14.01-amd64.iso"
+          mkdir -p validation
+          xorriso -indev "$ISO" -find / -type f -exec lsdl > validation/iso-file-list.txt 2>&1
+          xorriso -indev "$ISO" -report_el_torito as_mkisofs > validation/boot-catalog.txt 2>&1
+          grep -Ei 'install|vmlinuz|initrd|grub|isolinux' validation/iso-file-list.txt > validation/installer-boot-files.txt
+          grep -q 'filesystem.squashfs' validation/iso-file-list.txt
+          mkdir -p validation/rootfs
+          xorriso -osirrox on -indev "$ISO" -extract /live/filesystem.squashfs validation/filesystem.squashfs
+          unsquashfs -cat validation/filesystem.squashfs etc/os-release > validation/os-release.txt
+          grep -q 'DUB LEDGER 14.01' validation/os-release.txt
+          unsquashfs -cat validation/filesystem.squashfs var/lib/dpkg/status > validation/packages-status.txt
+          grep -q '^Package: xdm-app
+          {
+            echo "DUB LEDGER 14.01 ISO validation"
+            stat -c 'ISO size: %s bytes' "$ISO"
+            sha256sum "$ISO"
+            echo
+            cat validation/os-release.txt
+            echo
+            echo "Installer and boot-related paths:"
+            cat validation/installer-boot-files.txt
+            echo
+            echo "El Torito boot metadata:"
+            cat validation/boot-catalog.txt
+            echo
+            echo "NOTE: Static ISO inspection is not a VM or physical-machine boot test."
+            echo "NOTE: Manual partition selection must be reviewed on the target computer."
+          } > validation/VALIDATION-REPORT.txt
+
+      - name: Upload DUB LEDGER 14.01 ISO and validation
+        uses: actions/upload-artifact@v4
+        with:
+          name: DUB-LEDGER-14.01-ISO
+          path: |
+            output/DUB-LEDGER-14.01-amd64.iso
+            output/SHA256SUMS.txt
+            output/DUB-LEDGER-14.01-INSTALL-GUIDE-URDU.txt
+            validation/VALIDATION-REPORT.txt
+            validation/iso-file-list.txt
+            validation/installer-boot-files.txt
+            validation/boot-catalog.txt
+            validation/os-release.txt
+          if-no-files-found: error
+          retention-days: 14
+ validation/packages-status.txt
+          grep -q '^Package: video-downloader
+          {
+            echo "DUB LEDGER 14.01 ISO validation"
+            stat -c 'ISO size: %s bytes' "$ISO"
+            sha256sum "$ISO"
+            echo
+            cat validation/os-release.txt
+            echo
+            echo "Installer and boot-related paths:"
+            cat validation/installer-boot-files.txt
+            echo
+            echo "El Torito boot metadata:"
+            cat validation/boot-catalog.txt
+            echo
+            echo "NOTE: Static ISO inspection is not a VM or physical-machine boot test."
+            echo "NOTE: Manual partition selection must be reviewed on the target computer."
+          } > validation/VALIDATION-REPORT.txt
+
+      - name: Upload DUB LEDGER 14.01 ISO and validation
+        uses: actions/upload-artifact@v4
+        with:
+          name: DUB-LEDGER-14.01-ISO
+          path: |
+            output/DUB-LEDGER-14.01-amd64.iso
+            output/SHA256SUMS.txt
+            output/DUB-LEDGER-14.01-INSTALL-GUIDE-URDU.txt
+            validation/VALIDATION-REPORT.txt
+            validation/iso-file-list.txt
+            validation/installer-boot-files.txt
+            validation/boot-catalog.txt
+            validation/os-release.txt
+          if-no-files-found: error
+          retention-days: 14
+ validation/packages-status.txt
+          {
+            echo "DUB LEDGER 14.01 ISO validation"
+            stat -c 'ISO size: %s bytes' "$ISO"
+            sha256sum "$ISO"
+            echo
+            cat validation/os-release.txt
+            echo
+            echo "Installer and boot-related paths:"
+            cat validation/installer-boot-files.txt
+            echo
+            echo "El Torito boot metadata:"
+            cat validation/boot-catalog.txt
+            echo
+            echo "NOTE: Static ISO inspection is not a VM or physical-machine boot test."
+            echo "NOTE: Manual partition selection must be reviewed on the target computer."
+          } > validation/VALIDATION-REPORT.txt
+
+      - name: Upload DUB LEDGER 14.01 ISO and validation
+        uses: actions/upload-artifact@v4
+        with:
+          name: DUB-LEDGER-14.01-ISO
+          path: |
+            output/DUB-LEDGER-14.01-amd64.iso
+            output/SHA256SUMS.txt
+            output/DUB-LEDGER-14.01-INSTALL-GUIDE-URDU.txt
+            validation/VALIDATION-REPORT.txt
+            validation/iso-file-list.txt
+            validation/installer-boot-files.txt
+            validation/boot-catalog.txt
+            validation/os-release.txt
+          if-no-files-found: error
+          retention-days: 14
