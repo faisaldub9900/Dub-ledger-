@@ -1,0 +1,29 @@
+DUB LEDGER 13-1 — انسٹالیشن گائیڈ (اردو)
+
+یہ Debian GNU/Linux 13 (Trixie) پر مبنی 64-bit سسٹم ہے، Microsoft Windows نہیں۔ Windows کے C:/D:/E:/R: نام Linux انسٹالر میں نظر نہیں آئیں گے۔
+
+اہم حفاظتی بات
+- انسٹالیشن سے پہلے D، E، R اور C کے ضروری ڈیٹا کا الگ ڈرائیو/USB پر بیک اپ بنائیں۔
+- اس ISO میں Debian Installer کا graphical/live installer شامل کرنے کی configuration رکھی گئی ہے۔
+- صرف "Manual partitioning" منتخب کریں۔ "Guided - use entire disk" ہرگز منتخب نہ کریں۔
+- اگر آپ کو پارٹیشن کی شناخت میں ذرا بھی شک ہو تو انسٹالیشن روک دیں۔
+
+C پارٹیشن پر انسٹال کرنے کا عمومی طریقہ
+1. USB سے بوٹ کریں اور پہلے Live سسٹم میں Wi-Fi، آواز، گرافکس اور کی بورڈ چیک کریں۔
+2. Graphical Install / Install چلائیں۔
+3. Partition disks کے مرحلے پر Manual منتخب کریں۔
+4. ڈسک اور پارٹیشن کو اس کے سائز، NTFS فائل سسٹم اور ترتیب سے پہچانیں۔ Linux میں Windows کے drive letters استعمال نہیں ہوتے۔
+5. Windows کے سابقہ C: پارٹیشن کو ہی منتخب کریں، اگر آپ واقعی اسی کو خالی کرکے Linux لگانا چاہتے ہیں۔
+6. اسی منتخب پارٹیشن کو ext4 بنائیں، mount point "/" رکھیں اور format صرف اسی پارٹیشن کو کرنے کی تصدیق کریں۔
+7. D:/E:/R: والے پارٹیشنز کو نہ delete کریں، نہ format کریں، نہ ان کا filesystem تبدیل کریں۔ انہیں صرف اسی صورت mount کریں جب آپ کو پوری سمجھ ہو؛ ورنہ mount نہ کریں۔
+8. UEFI سسٹم میں موجود EFI System Partition کو /boot/efi کے طور پر منتخب کریں اور اسے format نہ کریں۔ انسٹالر اس میں اپنے boot files شامل کر سکتا ہے۔
+9. Bootloader کے لیے اسی ڈسک کو منتخب کریں جس پر Linux نصب کر رہے ہیں (مثلاً /dev/sda یا /dev/nvme0n1)، کسی data partition کو نہیں۔
+10. آخری خلاصہ غور سے دیکھیں۔ اگر D/E/R یا کوئی دوسرا غیر مطلوب پارٹیشن format/delete ہونے کی فہرست میں ہو تو واپس جائیں یا انسٹالیشن منسوخ کریں۔
+
+کیا مٹ سکتا ہے؟
+- سابقہ C: پارٹیشن کو ext4 بنانے سے اس پارٹیشن پر موجود Windows اور اس کا تمام ڈیٹا مٹ جائے گا۔
+- EFI System Partition کو format نہیں کرنا، مگر UEFI boot files وہاں لکھی جا سکتی ہیں۔
+- D/E/R کو محفوظ رکھنے کے لیے انہیں format/delete نہ ہونے کی تصدیق ضروری ہے۔ کوئی installer یا یہ تحریری گائیڈ آپ کے اصل disk layout کو دیکھے بغیر 100% ضمانت نہیں دے سکتی۔
+
+تصدیق
+یہ گائیڈ خودکار whole-disk installation کو منع کرتی ہے، لیکن ISO کی کامیاب build یا فائلوں کی جانچ physical computer پر محفوظ installation کا ثبوت نہیں۔ پہلے مکمل backup بنائیں اور partition summary کی تصویر/تفصیل ماہر کو دکھا کر تصدیق کریں۔
