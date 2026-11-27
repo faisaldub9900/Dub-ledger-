@@ -7,6 +7,7 @@ on:
     paths:
       - '.github/workflows/build-dub-ledger-13-1.yml'
       - '*.zip'
+      - 'DUB-LEDGER-13-1-INSTALL-GUIDE-URDU.txt'
   workflow_dispatch:
 
 permissions:
@@ -141,6 +142,7 @@ jobs:
           cp "$ISO" "$GITHUB_WORKSPACE/output/DUB-LEDGER-13-1-amd64.iso"
           cd "$GITHUB_WORKSPACE"
           sha256sum output/DUB-LEDGER-13-1-amd64.iso > output/SHA256SUMS.txt
+          cp DUB-LEDGER-13-1-INSTALL-GUIDE-URDU.txt output/
 
       - name: Validate OS identity, installer media and boot metadata
         shell: bash
@@ -180,6 +182,7 @@ jobs:
           path: |
             output/DUB-LEDGER-13-1-amd64.iso
             output/SHA256SUMS.txt
+            output/DUB-LEDGER-13-1-INSTALL-GUIDE-URDU.txt
             validation/VALIDATION-REPORT.txt
             validation/iso-file-list.txt
             validation/installer-boot-files.txt
