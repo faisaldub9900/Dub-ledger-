@@ -58,6 +58,27 @@ jobs:
           mkdir -p "$BUILD_DIR/config/package-lists"
           mkdir -p "$BUILD_DIR/config/includes.chroot/etc"
           mkdir -p "$BUILD_DIR/config/includes.chroot/etc/skel/Desktop"
+          mkdir -p "$BUILD_DIR/config/preseed" "$BUILD_DIR/config/includes.chroot/etc"
+          printf '%s\\n' 'en_US.UTF-8 UTF-8' > "$BUILD_DIR/config/includes.chroot/etc/locale.gen"
+          printf '%s\\n' 'LANG=en_US.UTF-8' 'LANGUAGE=en_US:en' > "$BUILD_DIR/config/includes.chroot/etc/default/locale"
+          cat > "$BUILD_DIR/config/preseed/dub-ledger-13-1-locale.cfg" <<'PRESEED'
+          d-i debian-installer/locale string en_US.UTF-8
+          d-i debian-installer/language string en
+          d-i debian-installer/country string US
+          d-i localechooser/supported-locales multiselect en_US.UTF-8
+          d-i keyboard-configuration/xkb-keymap select us
+          d-i keyboard-configuration/variantcode string
+          d-i console-setup/ask_detect boolean false
+          d-i console-setup/layoutcode string us
+          PRESEED
+          cat > "$BUILD_DIR/config/hooks/normal/0600-dub-ledger-en-us.hook.chroot" <<'HOOK'
+          #!/bin/sh
+          set -e
+          printf '%s\\n' 'en_US.UTF-8 UTF-8' > /etc/locale.gen
+          locale-gen
+          update-locale LANG=en_US.UTF-8 LANGUAGE=en_US:en
+          HOOK
+          chmod +x "$BUILD_DIR/config/hooks/normal/0600-dub-ledger-en-us.hook.chroot"
           mkdir -p "$BUILD_DIR/config/includes.chroot/etc/skel/.config/xfce4/xfconf/xfce-perchannel-xml"
           cat > "$BUILD_DIR/config/package-lists/dub-ledger-13-1-network.list.chroot" <<'PACKAGES'
           network-manager
@@ -84,6 +105,9 @@ jobs:
           xfce4-whiskermenu-plugin
           fonts-noto
           fonts-noto-color-emoji
+          locales
+          keyboard-configuration
+          console-setup
           PACKAGES
           cat > "$BUILD_DIR/config/includes.chroot/etc/os-release" <<'OS'
           PRETTY_NAME="DUB LEDGER 13-1"
