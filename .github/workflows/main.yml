@@ -74,6 +74,81 @@ jobs:
           echo "Added common Wi-Fi/LAN, hotspot/modem and firmware packages."
           echo "Actual adapter support still depends on the computer's hardware and firmware availability."
 
+      - name: Add Edge and app launchers
+        shell: bash
+        run: |
+          set -euxo pipefail
+          mkdir -p "$BUILD_DIR/config/hooks/live"
+          mkdir -p "$BUILD_DIR/config/includes.chroot/usr/share/applications"
+          mkdir -p "$BUILD_DIR/config/package-lists"
+          cat > "$BUILD_DIR/config/package-lists/dub-ledger-desktop-apps.list.chroot" <<'PACKAGES'
+          curl
+          wget
+          ca-certificates
+          desktop-file-utils
+          xdg-utils
+          network-manager-gnome
+          PACKAGES
+          cat > "$BUILD_DIR/config/hooks/live/0100-install-edge-and-app-launchers.hook.chroot" <<'HOOK'
+          #!/bin/sh
+          set -eu
+          apt-get update
+          tmp_deb="$(mktemp /tmp/microsoft-edge-XXXXXX.deb)"
+          if wget -q -O "$tmp_deb" "https://packages.microsoft.com/repos/edge/pool/main/m/microsoft-edge-stable/microsoft-edge-stable_amd64.deb"; then
+            apt-get install -y "$tmp_deb" || apt-get -f install -y
+          else
+            echo "Microsoft Edge package download failed; browser web shortcuts will still be installed."
+          fi
+          rm -f "$tmp_deb"
+          mkdir -p /usr/share/applications
+          make_link() {
+            name="$1"; url="$2"; file="$3"
+            cat > "/usr/share/applications/$file.desktop" <<EOF
+          [Desktop Entry]
+          Version=1.0
+          Type=Application
+          Name=$name
+          Comment=$name web app
+          Exec=xdg-open $url
+          Icon=web-browser
+          Terminal=false
+          Categories=Network;WebBrowser;
+          EOF
+          }
+          make_link "YouTube" "https://www.youtube.com/" "dub-youtube"
+          make_link "TikTok" "https://www.tiktok.com/" "dub-tiktok"
+          make_link "WhatsApp" "https://web.whatsapp.com/" "dub-whatsapp"
+          make_link "Facebook" "https://www.facebook.com/" "dub-facebook"
+          make_link "Messenger" "https://www.messenger.com/" "dub-messenger"
+          make_link "Google Play Store (Web)" "https://play.google.com/store" "dub-play-store-web"
+          HOOK
+          chmod +x "$BUILD_DIR/config/hooks/live/0100-install-edge-and-app-launchers.hook.chroot"
+          cat > "$BUILD_DIR/config/includes.chroot/usr/share/applications/dub-edge.desktop" <<'DESKTOP'
+          [Desktop Entry]
+          Version=1.0
+          Type=Application
+          Name=Microsoft Edge
+          Comment=Microsoft Edge browser
+          Exec=microsoft-edge-stable %U
+          Icon=microsoft-edge
+          Terminal=false
+          Categories=Network;WebBrowser;
+          DESKTOP
+          cat > "$BUILD_DIR/config/includes.chroot/usr/share/applications/dub-chrome.desktop" <<'DESKTOP'
+          [Desktop Entry]
+          Version=1.0
+          Type=Application
+          Name=Google Chrome
+          Comment=Google Chrome browser
+          Exec=google-chrome-stable %U
+          Icon=google-chrome
+          Terminal=false
+          Categories=Network;WebBrowser;
+          DESKTOP
+          echo "Added Edge install hook and web launchers for YouTube, TikTok, WhatsApp, Facebook, Messenger and Play Store website."
+          echo "Play Store is a web shortcut only; native Android Play Store support is not claimed."
+          echo "Chrome remains supplied by the build kit's existing Chrome installer."
+
       - name: Fix live-build auto config recursion
         run: |
           set -eux
