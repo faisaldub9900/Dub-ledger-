@@ -56,7 +56,7 @@ jobs:
         run: |
           set -euxo pipefail
           mkdir -p "$BUILD_DIR/config/package-lists"
-          mkdir -p "$BUILD_DIR/config/includes.chroot/etc"
+          mkdir -p "$BUILD_DIR/config/includes.chroot/etc" "$BUILD_DIR/config/includes.chroot/etc/default"
           mkdir -p "$BUILD_DIR/config/includes.chroot/etc/skel/Desktop"
           mkdir -p "$BUILD_DIR/config/preseed" "$BUILD_DIR/config/includes.chroot/etc"
           printf '%s\\n' 'en_US.UTF-8 UTF-8' 'en_GB.UTF-8 UTF-8' 'ur_PK.UTF-8 UTF-8' > "$BUILD_DIR/config/includes.chroot/etc/locale.gen"
