@@ -12,6 +12,7 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-24.04
+    container: debian:trixie
     timeout-minutes: 360
 
     steps:
@@ -20,8 +21,8 @@ jobs:
 
       - name: Install build dependencies
         run: |
-          sudo apt-get update
-          sudo apt-get install -y \
+          apt-get update
+          apt-get install -y \
             unzip xorriso squashfs-tools \
             debootstrap live-build \
             grub-pc-bin grub-efi-amd64-bin \
@@ -69,7 +70,7 @@ jobs:
           set -eux
           cd "$BUILD_DIR"
           chmod +x BUILD-LINUX.sh
-          sudo ./BUILD-LINUX.sh
+          ./BUILD-LINUX.sh
 
       - name: Upload ISO
         uses: actions/upload-artifact@v4
