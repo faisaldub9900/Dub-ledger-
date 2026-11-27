@@ -56,6 +56,13 @@ jobs:
             # so that lb does not recursively execute auto/config forever.
             sed -i -E 's/^([[:space:]]*)lb[[:space:]]+config([[:space:]]|$)/\1lb config noauto\2/' "$AUTO_CONFIG"
             chmod +x "$AUTO_CONFIG"
+          # neofetch is no longer available in Debian Trixie; remove it from
+          # any live-build package list so the image can continue building.
+          find "$BUILD_DIR" -type f ! -name '*.zip' -exec sed -i -E 's/(^|[[:space:]])neofetch([[:space:]]|$)/ /g' {} +
+          if grep -Rni --exclude='*.zip' neofetch "$BUILD_DIR"; then
+            echo "neofetch reference remains in build files"
+            exit 1
+          fi
             echo "Patched auto/config:"
             sed -n '1,180p' "$AUTO_CONFIG"
             if grep -Eq '^[[:space:]]*lb[[:space:]]+config[[:space:]]*$' "$AUTO_CONFIG"; then
