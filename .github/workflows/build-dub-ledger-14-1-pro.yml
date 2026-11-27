@@ -7,6 +7,7 @@ on:
     paths:
       - '.github/workflows/build-dub-ledger-14-1-pro.yml'
       - '*.zip'
+      - 'assets/**'
       - 'DUB-LEDGER-14.01-INSTALL-GUIDE-URDU.txt'
   workflow_dispatch:
 
@@ -299,13 +300,12 @@ jobs:
           xorriso -indev "$ISO" -report_el_torito as_mkisofs > validation/boot-catalog.txt 2>&1
           grep -Ei 'install|vmlinuz|initrd|grub|isolinux' validation/iso-file-list.txt > validation/installer-boot-files.txt
           grep -q 'filesystem.squashfs' validation/iso-file-list.txt
-          grep -q 'dub-ledger-desktop.png' validation/iso-file-list.txt
           xorriso -osirrox on -indev "$ISO" -extract /live/filesystem.squashfs validation/filesystem.squashfs
           unsquashfs -cat validation/filesystem.squashfs etc/os-release > validation/os-release.txt
           grep -q 'DUB LEDGER 14.1 PRO' validation/os-release.txt
           unsquashfs -cat validation/filesystem.squashfs usr/share/plymouth/themes/dub-ledger-pro/dub-ledger-pro.script > validation/plymouth-script.txt
           grep -q 'boot-emblem.png' validation/plymouth-script.txt
-          unsquashfs -cat validation/filesystem.squashfs usr/share/backgrounds/dub-ledger/dub-ledger-desktop.png > /dev/null
+          unsquashfs -cat validation/filesystem.squashfs usr/share/backgrounds/dub-ledger/dub-ledger-desktop.png | file - | grep -q 'PNG image data'
           grep -q 'SHAKEEL FAYSAL DUB' validation/plymouth-script.txt
           {
             echo "DUB LEDGER 14.1 PRO static ISO validation"
