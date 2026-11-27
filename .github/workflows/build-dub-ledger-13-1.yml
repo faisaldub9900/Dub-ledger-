@@ -1,0 +1,189 @@
+name: Build DUB LEDGER 13-1 ISO
+
+on:
+  push:
+    branches:
+      - dub-ledger-13-1
+    paths:
+      - '.github/workflows/build-dub-ledger-13-1.yml'
+      - '*.zip'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    container:
+      image: debian:trixie
+      options: --privileged
+    timeout-minutes: 360
+
+    steps:
+      - name: Checkout DUB LEDGER 13-1 source
+        uses: actions/checkout@v4
+
+      - name: Install ISO build tools
+        shell: bash
+        run: |
+          set -euxo pipefail
+          apt-get update
+          apt-get install -y \
+            unzip xorriso squashfs-tools debootstrap live-build \
+            grub-pc-bin grub-efi-amd64-bin mtools dosfstools isolinux \
+            syslinux-common rsync wget curl git ca-certificates
+
+      - name: Extract and prepare the original build kit
+        shell: bash
+        run: |
+          set -euxo pipefail
+          mapfile -t archives < <(find . -maxdepth 1 -type f -iname '*.zip' -print | sort)
+          test "${#archives[@]}" -eq 1
+          mkdir -p buildkit
+          unzip -q "${archives[0]}" -d buildkit
+          SCRIPT="$(find buildkit -type f -name BUILD-LINUX.sh -print -quit)"
+          test -n "$SCRIPT"
+          BUILD_DIR="$(dirname "$SCRIPT")"
+          echo "BUILD_DIR=$BUILD_DIR" >> "$GITHUB_ENV"
+          test -f "$BUILD_DIR/auto/config"
+          grep -q -- '--debian-installer live' "$BUILD_DIR/auto/config"
+          grep -q 'task-xfce-desktop' "$BUILD_DIR/config/package-lists/dub-ledger.list.chroot"
+
+      - name: Apply DUB LEDGER 13-1 branding and network packages
+        shell: bash
+        run: |
+          set -euxo pipefail
+          mkdir -p "$BUILD_DIR/config/package-lists"
+          mkdir -p "$BUILD_DIR/config/includes.chroot/etc"
+          mkdir -p "$BUILD_DIR/config/includes.chroot/etc/skel/Desktop"
+          cat > "$BUILD_DIR/config/package-lists/dub-ledger-13-1-network.list.chroot" <<'PACKAGES'
+          network-manager
+          network-manager-gnome
+          wpasupplicant
+          wireless-tools
+          iw
+          rfkill
+          modemmanager
+          ppp
+          usb-modeswitch
+          bluez
+          blueman
+          firmware-linux
+          firmware-linux-nonfree
+          firmware-misc-nonfree
+          firmware-iwlwifi
+          firmware-realtek
+          firmware-atheros
+          firmware-brcm80211
+          firmware-mediatek
+          PACKAGES
+          cat > "$BUILD_DIR/config/includes.chroot/etc/os-release" <<'OS'
+          PRETTY_NAME="DUB LEDGER 13-1"
+          NAME="DUB LEDGER"
+          VERSION="13-1"
+          VERSION_ID="13-1"
+          ID=dub-ledger
+          ID_LIKE=debian
+          HOME_URL="https://github.com/faisaldub9900/Dub-ledger-"
+          SUPPORT_URL="https://github.com/faisaldub9900/Dub-ledger-/issues"
+          OS
+          cat > "$BUILD_DIR/config/includes.chroot/etc/skel/Desktop/DUB-LEDGER-13-1-INSTALLATION-IMPORTANT.txt" <<'NOTICE'
+          DUB LEDGER 13-1 — IMPORTANT INSTALLATION SAFETY
+
+          This system is Debian GNU/Linux based. It is NOT Microsoft Windows.
+          Back up important files before installing.
+
+          To keep other partitions:
+          1. Boot the USB and choose the graphical Install option.
+          2. Choose MANUAL partitioning. NEVER choose "Guided - use entire disk".
+          3. Identify the intended former Windows C: partition by disk, size and filesystem.
+             Linux does not use Windows C:/D:/E:/R: drive letters.
+          4. Set only the intended target partition as the root filesystem mounted at /,
+             and mark ONLY that partition to be formatted.
+          5. Do not format or delete the partitions containing D:, E: or R: data.
+          6. On UEFI systems, select the existing EFI System Partition as /boot/efi
+             WITHOUT formatting it. The installer may add its own boot files there.
+          7. Review the final partition-change summary carefully. Cancel if any
+             non-target data partition is listed for formatting or deletion.
+
+          IMPORTANT: Installing to the former C: partition erases Windows and all
+          files on that C: partition. A partition layout, installer screen and
+          hardware-specific test are required before installation can be considered safe.
+          If unsure, stop and ask for help. Keep a separate backup.
+          NOTICE
+          # Remove unavailable package references from the original Trixie package list.
+          find "$BUILD_DIR/config/package-lists" -type f -exec sed -i -E 's/(^|[[:space:]])neofetch([[:space:]]|$)/ /g' {} +
+          if grep -Rni neofetch "$BUILD_DIR/config/package-lists"; then
+            echo "Unavailable neofetch package reference remains."
+            exit 1
+          fi
+
+      - name: Patch live-build configuration recursion
+        shell: bash
+        run: |
+          set -euxo pipefail
+          AUTO_CONFIG="$BUILD_DIR/auto/config"
+          sed -i -E 's/^([[:space:]]*)lb[[:space:]]+config([[:space:]]|$)/\1lb config noauto\2/' "$AUTO_CONFIG"
+          chmod +x "$AUTO_CONFIG"
+          grep -q 'lb config noauto' "$AUTO_CONFIG"
+
+      - name: Build DUB LEDGER 13-1 ISO
+        shell: bash
+        run: |
+          set -euxo pipefail
+          cd "$BUILD_DIR"
+          chmod +x BUILD-LINUX.sh
+          ./BUILD-LINUX.sh
+          ISO="$(find . -maxdepth 1 -type f -iname '*.iso' -print | sort | head -n 1)"
+          test -n "$ISO"
+          mkdir -p "$GITHUB_WORKSPACE/output"
+          cp "$ISO" "$GITHUB_WORKSPACE/output/DUB-LEDGER-13-1-amd64.iso"
+          cd "$GITHUB_WORKSPACE"
+          sha256sum output/DUB-LEDGER-13-1-amd64.iso > output/SHA256SUMS.txt
+
+      - name: Validate OS identity, installer media and boot metadata
+        shell: bash
+        run: |
+          set -euxo pipefail
+          ISO="$GITHUB_WORKSPACE/output/DUB-LEDGER-13-1-amd64.iso"
+          mkdir -p validation
+          xorriso -indev "$ISO" -find / -type f -exec lsdl > validation/iso-file-list.txt 2>&1
+          xorriso -indev "$ISO" -report_el_torito as_mkisofs > validation/boot-catalog.txt 2>&1
+          grep -Ei 'install|vmlinuz|initrd|grub|isolinux' validation/iso-file-list.txt > validation/installer-boot-files.txt
+          grep -q 'filesystem.squashfs' validation/iso-file-list.txt
+          mkdir -p validation/rootfs
+          xorriso -osirrox on -indev "$ISO" -extract /live/filesystem.squashfs validation/filesystem.squashfs
+          unsquashfs -cat validation/filesystem.squashfs etc/os-release > validation/os-release.txt
+          grep -q 'DUB LEDGER 13-1' validation/os-release.txt
+          {
+            echo "DUB LEDGER 13-1 ISO validation"
+            stat -c 'ISO size: %s bytes' "$ISO"
+            sha256sum "$ISO"
+            echo
+            cat validation/os-release.txt
+            echo
+            echo "Installer and boot-related paths:"
+            cat validation/installer-boot-files.txt
+            echo
+            echo "El Torito boot metadata:"
+            cat validation/boot-catalog.txt
+            echo
+            echo "NOTE: Static ISO inspection is not a VM or physical-machine boot test."
+            echo "NOTE: Manual partition selection must be reviewed on the target computer."
+          } > validation/VALIDATION-REPORT.txt
+
+      - name: Upload DUB LEDGER 13-1 ISO and validation
+        uses: actions/upload-artifact@v4
+        with:
+          name: DUB-LEDGER-13-1-ISO
+          path: |
+            output/DUB-LEDGER-13-1-amd64.iso
+            output/SHA256SUMS.txt
+            validation/VALIDATION-REPORT.txt
+            validation/iso-file-list.txt
+            validation/installer-boot-files.txt
+            validation/boot-catalog.txt
+            validation/os-release.txt
+          if-no-files-found: error
+          retention-days: 14
