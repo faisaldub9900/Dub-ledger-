@@ -1,4 +1,4 @@
-name: Build DUB LEDGER WINDOWS ISO
+name: Build DUB LEDGER 12.1 ISO
 
 on:
   workflow_dispatch:
@@ -185,11 +185,42 @@ jobs:
           chmod +x BUILD-LINUX.sh
           ./BUILD-LINUX.sh
 
+      - name: Verify ISO contents and identify operating system
+        shell: bash
+        run: |
+          set -euxo pipefail
+          ISO=$(find "$BUILD_DIR" -type f -iname '*.iso' | head -n 1)
+          test -n "$ISO"
+          mkdir -p validation
+          {
+            echo "DUB LEDGER 12.1 ISO validation"
+            echo "ISO file: $ISO"
+            echo "File size: $(stat -c '%s bytes' "$ISO")"
+            echo
+            echo "ISO volume information:"
+            xorriso -indev "$ISO" -pvd_info 2>&1 || true
+            echo
+            echo "ISO file listing (first 100 entries):"
+            xorriso -indev "$ISO" -find / -type f -exec lsdl 2>&1 | head -100 || true
+          } > validation/iso-validation.txt
+          mkdir -p validation/rootfs
+          if xorriso -osirrox on -indev "$ISO" -extract /live/filesystem.squashfs validation/filesystem.squashfs >/dev/null 2>&1; then
+            unsquashfs -cat validation/filesystem.squashfs etc/os-release > validation/os-release.txt
+            cat validation/os-release.txt >> validation/iso-validation.txt
+            cp validation/os-release.txt validation/rootfs-os-release.txt
+          else
+            echo "Could not locate /live/filesystem.squashfs; OS identity was not verified." | tee -a validation/iso-validation.txt
+            exit 1
+          fi
+          echo "ISO content inspection completed. Review os-release before calling this a Windows installer."
+
       - name: Upload ISO
         uses: actions/upload-artifact@v4
         with:
-          name: DUB-LEDGER-WINDOWS-1.0-ISO
+          name: DUB-LEDGER-12.1-ISO
           path: |
             **/*.iso
+            validation/iso-validation.txt
+            validation/os-release.txt
           if-no-files-found: error
           retention-days: 14
