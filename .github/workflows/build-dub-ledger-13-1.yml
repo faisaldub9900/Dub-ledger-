@@ -59,8 +59,8 @@ jobs:
           mkdir -p "$BUILD_DIR/config/includes.chroot/etc" "$BUILD_DIR/config/includes.chroot/etc/default"
           mkdir -p "$BUILD_DIR/config/includes.chroot/etc/skel/Desktop"
           mkdir -p "$BUILD_DIR/config/preseed" "$BUILD_DIR/config/includes.chroot/etc"
-          printf '%s\\n' 'en_US.UTF-8 UTF-8' > "$BUILD_DIR/config/includes.chroot/etc/locale.gen"
-          printf '%s\\n' 'LANG=en_US.UTF-8' 'LANGUAGE=en_US:en' > "$BUILD_DIR/config/includes.chroot/etc/default/locale"
+          printf '%s\n' 'en_US.UTF-8 UTF-8' > "$BUILD_DIR/config/includes.chroot/etc/locale.gen"
+          printf '%s\n' 'LANG=en_US.UTF-8' 'LANGUAGE=en_US:en' > "$BUILD_DIR/config/includes.chroot/etc/default/locale"
           cat > "$BUILD_DIR/config/preseed/dub-ledger-13-1-locale.cfg" <<'PRESEED'
           d-i debian-installer/locale string en_US.UTF-8
           d-i debian-installer/language string en
@@ -74,7 +74,7 @@ jobs:
           cat > "$BUILD_DIR/config/hooks/normal/0600-dub-ledger-en-us.hook.chroot" <<'HOOK'
           #!/bin/sh
           set -e
-          printf '%s\\n' 'en_US.UTF-8 UTF-8' > /etc/locale.gen
+          printf '%s\n' 'en_US.UTF-8 UTF-8' > /etc/locale.gen
           locale-gen
           update-locale LANG=en_US.UTF-8 LANGUAGE=en_US:en
           HOOK
