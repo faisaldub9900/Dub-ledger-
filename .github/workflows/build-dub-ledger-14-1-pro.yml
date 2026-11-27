@@ -1,0 +1,171 @@
+name: Build DUB LEDGER 14.1 PRO ISO
+
+on:
+  push:
+    branches:
+      - dub-ledger-14-1-pro
+    paths:
+      - '.github/workflows/build-dub-ledger-14-1-pro.yml'
+      - '*.zip'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    container:
+      image: debian:trixie
+      options: --privileged
+    timeout-minutes: 360
+    steps:
+      - name: Checkout DUB LEDGER 14.1 PRO source
+        uses: actions/checkout@v4
+
+      - name: Install ISO build tools
+        shell: bash
+        run: |
+          set -euxo pipefail
+          apt-get update
+          apt-get install -y unzip xorriso squashfs-tools debootstrap live-build grub-pc-bin grub-efi-amd64-bin mtools dosfstools isolinux syslinux-common rsync wget curl git ca-certificates plymouth plymouth-themes
+
+      - name: Extract and configure branded system
+        shell: bash
+        run: |
+          set -euxo pipefail
+          mapfile -t archives < <(find . -maxdepth 1 -type f -iname '*.zip' -print | sort)
+          test "${#archives[@]}" -eq 1
+          mkdir -p buildkit
+          unzip -q "${archives[0]}" -d buildkit
+          SCRIPT="$(find buildkit -type f -name BUILD-LINUX.sh -print -quit)"
+          test -n "$SCRIPT"
+          BUILD_DIR="$(dirname "$SCRIPT")"
+          echo "BUILD_DIR=$BUILD_DIR" >> "$GITHUB_ENV"
+          test -f "$BUILD_DIR/auto/config"
+          grep -q -- '--debian-installer live' "$BUILD_DIR/auto/config"
+          grep -q 'task-xfce-desktop' "$BUILD_DIR/config/package-lists/dub-ledger.list.chroot"
+
+          mkdir -p "$BUILD_DIR/config/package-lists"
+          cat > "$BUILD_DIR/config/package-lists/dub-ledger-14-1-pro-branding.list.chroot" <<'PACKAGES'
+          plymouth
+          plymouth-themes
+          locales
+          fonts-dejavu-core
+          PACKAGES
+
+          THEME="$BUILD_DIR/config/includes.chroot/usr/share/plymouth/themes/dub-ledger-pro"
+          mkdir -p "$THEME"
+          cat > "$THEME/dub-ledger-pro.plymouth" <<'PLYMOUTH'
+          [Plymouth Theme]
+          Name=DUB LEDGER 14.1 PRO
+          Description=Blue and gold animated DUB LEDGER startup identity
+          ModuleName=script
+
+          [script]
+          ImageDir=/usr/share/plymouth/themes/dub-ledger-pro
+          ScriptFile=/usr/share/plymouth/themes/dub-ledger-pro/dub-ledger-pro.script
+          PLYMOUTH
+
+          cat > "$THEME/dub-ledger-pro.script" <<'SCRIPT'
+          Window.SetBackgroundTopColor(0.005, 0.015, 0.07);
+          Window.SetBackgroundBottomColor(0.0, 0.025, 0.12);
+
+          badge_image = Image.Text("◉  DUB  ◉", 0.10, 0.72, 1.0, 1.0, "Sans Bold  forty");
+          badge_sprite = Sprite(badge_image);
+          title_image = Image.Text("DUB LEDGER 14.1 PRO", 0.96, 0.72, 0.22, 1.0, "Sans Bold 28");
+          title_sprite = Sprite(title_image);
+          dev_image = Image.Text("DEVELOPER: SHAKEEL FAYSAL DUB", 0.82, 0.86, 1.0, 1.0, "Sans 14");
+          dev_sprite = Sprite(dev_image);
+          progress = 0;
+          angle = 0;
+
+          fun refresh_callback() {
+              angle += 0.035;
+              rotated_badge = badge_image.Rotate(angle);
+              badge_sprite.SetImage(rotated_badge);
+              badge_sprite.SetX(Window.GetWidth() / 2 - rotated_badge.GetWidth() / 2);
+              badge_sprite.SetY(Window.GetHeight() / 2 - rotated_badge.GetHeight() / 2 - 55);
+              title_sprite.SetX(Window.GetWidth() / 2 - title_image.GetWidth() / 2);
+              title_sprite.SetY(Window.GetHeight() / 2 + 15);
+              dev_sprite.SetX(Window.GetWidth() / 2 - dev_image.GetWidth() / 2);
+              dev_sprite.SetY(Window.GetHeight() / 2 + 55);
+              progress++;
+          }
+          Plymouth.SetRefreshFunction(refresh_callback);
+          SCRIPT
+          # Replace the placeholder font size with a supported size.
+          sed -i 's/Sans Bold  forty/Sans Bold 40/' "$THEME/dub-ledger-pro.script"
+
+          mkdir -p "$BUILD_DIR/config/hooks/normal"
+          cat > "$BUILD_DIR/config/hooks/normal/0800-dub-ledger-pro-plymouth.hook.chroot" <<'HOOK'
+          #!/bin/sh
+          set -eu
+          if command -v plymouth-set-default-theme >/dev/null 2>&1; then
+            plymouth-set-default-theme dub-ledger-pro
+            update-initramfs -u -k all
+          fi
+          HOOK
+          chmod +x "$BUILD_DIR/config/hooks/normal/0800-dub-ledger-pro-plymouth.hook.chroot"
+
+          mkdir -p "$BUILD_DIR/config/includes.chroot/etc"
+          cat > "$BUILD_DIR/config/includes.chroot/etc/os-release" <<'OS'
+          PRETTY_NAME="DUB LEDGER 14.1 PRO"
+          NAME="DUB LEDGER"
+          VERSION="14.1 PRO"
+          VERSION_ID="14.1"
+          ID=dub-ledger
+          ID_LIKE=debian
+          HOME_URL="https://github.com/faisaldub9900/Dub-ledger-"
+          SUPPORT_URL="https://github.com/faisaldub9900/Dub-ledger-/issues"
+          OS
+          if [ -f "$BUILD_DIR/config/hooks/normal/0500-dub-ledger-branding.hook.chroot" ]; then
+            sed -i 's/DUB LEDGER WINDOWS 1.0/DUB LEDGER 14.1 PRO/g; s/DUB LEDGER 14.01/DUB LEDGER 14.1 PRO/g' "$BUILD_DIR/config/hooks/normal/0500-dub-ledger-branding.hook.chroot"
+          fi
+          sed -i 's/DUB LEDGER WINDOWS/DUB LEDGER 14.1 PRO/g; s/DUB LEDGER 14.01/DUB LEDGER 14.1 PRO/g' "$BUILD_DIR/auto/config"
+          sed -i -E 's/^([[:space:]]*)lb[[:space:]]+config([[:space:]]|$)/\1lb config noauto\2/' "$BUILD_DIR/auto/config"
+          chmod +x "$BUILD_DIR/auto/config"
+          grep -q 'lb config noauto' "$BUILD_DIR/auto/config"
+
+      - name: Build DUB LEDGER 14.1 PRO ISO
+        shell: bash
+        run: |
+          set -euxo pipefail
+          cd "$BUILD_DIR"
+          chmod +x BUILD-LINUX.sh
+          ./BUILD-LINUX.sh
+          ISO="$(find . -maxdepth 1 -type f -iname '*.iso' -print | sort | head -n 1)"
+          test -n "$ISO"
+          mkdir -p "$GITHUB_WORKSPACE/output"
+          cp "$ISO" "$GITHUB_WORKSPACE/output/DUB-LEDGER-14.1-PRO-amd64.iso"
+          cd "$GITHUB_WORKSPACE"
+          sha256sum output/DUB-LEDGER-14.1-PRO-amd64.iso > output/SHA256SUMS.txt
+
+      - name: Validate ISO contents
+        shell: bash
+        run: |
+          set -euxo pipefail
+          ISO="$GITHUB_WORKSPACE/output/DUB-LEDGER-14.1-PRO-amd64.iso"
+          mkdir -p validation
+          xorriso -indev "$ISO" -find / -type f -exec lsdl > validation/iso-file-list.txt 2>&1
+          grep -q 'filesystem.squashfs' validation/iso-file-list.txt
+          xorriso -osirrox on -indev "$ISO" -extract /live/filesystem.squashfs validation/filesystem.squashfs
+          unsquashfs -cat validation/filesystem.squashfs etc/os-release > validation/os-release.txt
+          grep -q 'DUB LEDGER 14.1 PRO' validation/os-release.txt
+          unsquashfs -cat validation/filesystem.squashfs usr/share/plymouth/themes/dub-ledger-pro/dub-ledger-pro.script > validation/plymouth-script.txt
+          grep -q 'SHAKEEL FAYSAL DUB' validation/plymouth-script.txt
+          printf '%s\n' 'Static ISO inspection only; VM and physical-machine boot tests remain required.' > validation/TEST-LIMITATIONS.txt
+
+      - name: Upload ISO and validation reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: DUB-LEDGER-14.1-PRO-ISO
+          path: |
+            output/DUB-LEDGER-14.1-PRO-amd64.iso
+            output/SHA256SUMS.txt
+            validation/iso-file-list.txt
+            validation/os-release.txt
+            validation/plymouth-script.txt
+            validation/TEST-LIMITATIONS.txt
+          if-no-files-found: error
+          retention-days: 14
