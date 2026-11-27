@@ -1,0 +1,43 @@
+DUB LEDGER 14.1 PRO — INSTALLATION GUIDE
+
+System identity
+- Product: DUB LEDGER 14.1 PRO
+- Developer: SHAKEEL FAYSAL DUB
+- Base: Debian GNU/Linux 13 (Trixie), 64-bit
+- Language: English (United States), en_US.UTF-8
+- Keyboard: US
+
+Startup
+- The PRO build includes a blue-and-gold animated Plymouth startup identity.
+- The startup animation is intended to appear while Linux is booting; it is not the desktop wallpaper.
+- The final ISO must pass build validation and be tested in a virtual machine and on target hardware before this animation can be called verified.
+
+Desktop and connectivity
+- XFCE desktop with dark Arc theme and Papirus icons.
+- NetworkManager and common wireless firmware packages are included in the build configuration.
+- Bluetooth support is provided through BlueZ and Blueman packages.
+- Actual Wi-Fi and Bluetooth operation depends on the computer's hardware and suitable firmware.
+- XDM, Video Downloader, yt-dlp and aria2 are included in the build configuration. Website restrictions and DRM may prevent some downloads.
+
+Important feature notes
+- Chrome, YouTube and WhatsApp are not represented as preinstalled native applications by this build configuration.
+- Play Store is an Android service and is not a native Debian application; it is not promised as an installed feature.
+- Trading software compatibility depends on each provider's Linux/web support.
+- Mobile Mode and custom Window Mode are not yet implemented as separate operating-system modes.
+- Do not assume a feature is installed merely because its icon or name appears in a design.
+
+Installation and data safety
+1. Back up important files to a separate drive before installation.
+2. Boot the USB and choose the graphical installer.
+3. Choose MANUAL partitioning. NEVER choose "Guided - use entire disk".
+4. Linux does not use Windows C:, D:, E: or R: drive letters. Identify partitions by disk, size, filesystem and contents.
+5. Set only the intended target partition as the root filesystem mounted at /. Format only that target partition.
+6. Do not format or delete any partition containing D:, E: or R: data.
+7. On UEFI systems, select the existing EFI System Partition as /boot/efi WITHOUT formatting it.
+8. Review the installer's final partition-change summary. Cancel if any non-target data partition is marked for formatting or deletion.
+
+WARNING
+Formatting the former Windows C: partition erases Windows and all files on that partition. No installer can guarantee that other partitions will remain untouched without checking the actual partition layout and final installer summary on the target computer. Keep a separate backup. If unsure, stop and ask for help.
+
+Testing status
+A successful cloud build and static ISO inspection do not replace a virtual-machine boot test or a physical-computer test. Do not install on a computer containing important data until those checks have been completed.
