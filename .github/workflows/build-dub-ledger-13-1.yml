@@ -165,6 +165,9 @@ jobs:
           sed -i -E 's/^([[:space:]]*)lb[[:space:]]+config([[:space:]]|$)/\1lb config noauto\2/' "$AUTO_CONFIG"
           chmod +x "$AUTO_CONFIG"
           grep -q 'lb config noauto' "$AUTO_CONFIG"
+          sed -i 's/DUB LEDGER WINDOWS/DUB LEDGER 13-1/g' "$AUTO_CONFIG"
+          sed -i 's/DUB_LEDGER/DUB_LEDGER_13_1/g' "$AUTO_CONFIG"
+          grep -q 'DUB LEDGER 13-1' "$AUTO_CONFIG"
 
       - name: Build DUB LEDGER 13-1 ISO
         shell: bash
