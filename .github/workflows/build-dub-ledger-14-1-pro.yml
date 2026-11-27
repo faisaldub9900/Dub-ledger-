@@ -285,7 +285,7 @@ jobs:
           test -n "$ISO"
           mkdir -p "$GITHUB_WORKSPACE/output"
           cp "$ISO" "$GITHUB_WORKSPACE/output/DUB-LEDGER-14.1-PRO-amd64.iso"
-          cp "$GITHUB_WORKSPACE/DUB-LEDGER-14.01-INSTALL-GUIDE-URDU.txt" "$GITHUB_WORKSPACE/output/DUB-LEDGER-14.1-PRO-INSTALL-GUIDE-URDU.txt"
+          cp "$GITHUB_WORKSPACE/DUB-LEDGER-14.1-PRO-INSTALL-GUIDE-EN-US.txt" "$GITHUB_WORKSPACE/output/DUB-LEDGER-14.1-PRO-INSTALL-GUIDE-EN-US.txt"
           cd "$GITHUB_WORKSPACE"
           sha256sum output/DUB-LEDGER-14.1-PRO-amd64.iso > output/SHA256SUMS.txt
 
@@ -325,7 +325,7 @@ jobs:
           name: DUB-LEDGER-14.1-PRO-ISO
           path: |
             output/DUB-LEDGER-14.1-PRO-amd64.iso
-            output/DUB-LEDGER-14.1-PRO-INSTALL-GUIDE-URDU.txt
+            output/DUB-LEDGER-14.1-PRO-INSTALL-GUIDE-EN-US.txt
             output/SHA256SUMS.txt
             validation/VALIDATION-REPORT.txt
             validation/iso-file-list.txt
