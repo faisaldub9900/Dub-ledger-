@@ -45,6 +45,35 @@ jobs:
           echo "Build script: $SCRIPT"
           find "$BUILD_DIR" -maxdepth 2 -type f | sort | head -200
 
+      - name: Add Wi-Fi, LAN, firmware and desktop network manager packages
+        shell: bash
+        run: |
+          set -euxo pipefail
+          mkdir -p "$BUILD_DIR/config/package-lists"
+          cat > "$BUILD_DIR/config/package-lists/dub-ledger-network.list.chroot" <<'PACKAGES'
+          network-manager
+          network-manager-gnome
+          wpasupplicant
+          wireless-tools
+          iw
+          rfkill
+          modemmanager
+          ppp
+          usb-modeswitch
+          bluez
+          blueman
+          firmware-linux
+          firmware-linux-nonfree
+          firmware-misc-nonfree
+          firmware-iwlwifi
+          firmware-realtek
+          firmware-atheros
+          firmware-brcm80211
+          firmware-mediatek
+          PACKAGES
+          echo "Added common Wi-Fi/LAN, hotspot/modem and firmware packages."
+          echo "Actual adapter support still depends on the computer's hardware and firmware availability."
+
       - name: Fix live-build auto config recursion
         run: |
           set -eux
@@ -56,13 +85,13 @@ jobs:
             # so that lb does not recursively execute auto/config forever.
             sed -i -E 's/^([[:space:]]*)lb[[:space:]]+config([[:space:]]|$)/\1lb config noauto\2/' "$AUTO_CONFIG"
             chmod +x "$AUTO_CONFIG"
-          # neofetch is no longer available in Debian Trixie; remove it from
-          # any live-build package list so the image can continue building.
-          find "$BUILD_DIR" -type f ! -name '*.zip' -exec sed -i -E 's/(^|[[:space:]])neofetch([[:space:]]|$)/ /g' {} +
-          if grep -Rni --exclude='*.zip' neofetch "$BUILD_DIR"; then
-            echo "neofetch reference remains in build files"
-            exit 1
-          fi
+            # neofetch is no longer available in Debian Trixie; remove it from
+            # any live-build package list so the image can continue building.
+            find "$BUILD_DIR" -type f ! -name '*.zip' -exec sed -i -E 's/(^|[[:space:]])neofetch([[:space:]]|$)/ /g' {} +
+            if grep -Rni --exclude='*.zip' neofetch "$BUILD_DIR"; then
+              echo "neofetch reference remains in build files"
+              exit 1
+            fi
             echo "Patched auto/config:"
             sed -n '1,180p' "$AUTO_CONFIG"
             if grep -Eq '^[[:space:]]*lb[[:space:]]+config[[:space:]]*$' "$AUTO_CONFIG"; then
