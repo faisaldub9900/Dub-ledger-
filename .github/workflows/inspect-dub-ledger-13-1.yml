@@ -1,0 +1,60 @@
+name: Inspect DUB LEDGER 13-1 Build Kit
+
+on:
+  push:
+    branches:
+      - dub-ledger-13-1
+    paths:
+      - '.github/workflows/inspect-dub-ledger-13-1.yml'
+      - '*.zip'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  inspect:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Inspect build kit without building or modifying disks
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p inspection
+          mapfile -t archives < <(find . -maxdepth 1 -type f -iname '*.zip' -print | sort)
+          if [ "${#archives[@]}" -ne 1 ]; then
+            echo "Expected exactly one build-kit ZIP; found ${#archives[@]}." | tee inspection/summary.txt
+            exit 1
+          fi
+          unzip -q "${archives[0]}" -d inspection/extracted
+          find inspection/extracted -type f -printf '%P\t%s bytes\n' | sort > inspection/file-inventory.txt
+          {
+            echo "DUB LEDGER 13-1 build-kit inspection"
+            echo "Archive: ${archives[0]}"
+            echo
+            echo "Potential installer, partitioning, desktop and boot files:"
+            grep -Ei 'install|partition|calamares|live-installer|grub|isolinux|desktop|xfce|kde|gnome|wallpaper|theme|plymouth|BUILD-LINUX' inspection/file-inventory.txt || true
+            echo
+            echo "Installer and partitioning references in text scripts/configs:"
+            grep -RniE --include='*.sh' --include='*.yml' --include='*.yaml' --include='*.cfg' --include='*.conf' --include='*.txt' --include='*.list' --include='*.desktop' 'calamares|live-installer|partition|partman|mkfs|wipefs|fdisk|parted|grub-install|debian-installer' inspection/extracted || true
+          } > inspection/summary.txt
+          find inspection/extracted -type f \( -name 'BUILD-LINUX.sh' -o -path '*/auto/config' -o -iname '*install*.sh' -o -iname '*partition*' -o -iname '*calamares*' \) -print0 |
+            while IFS= read -r -d '' file; do
+              {
+                echo
+                echo "===== $file ====="
+                sed -n '1,260p' "$file"
+              } >> inspection/key-files.txt
+            done
+          cat inspection/summary.txt
+
+      - name: Upload inspection report
+        uses: actions/upload-artifact@v4
+        with:
+          name: DUB-LEDGER-13-1-BUILD-KIT-INSPECTION
+          path: inspection/
+          if-no-files-found: error
+          retention-days: 14
