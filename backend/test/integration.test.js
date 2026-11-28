@@ -62,6 +62,11 @@ test('PostgreSQL-backed Owner, MFA, wallet and approval flow', { skip: !enabled,
     assert.equal(login.body.user.role, 'owner');
     const firstToken = login.body.token;
 
+    const ownerRouteBeforeMfa = await api('/owner/users', { token: firstToken });
+    assert.equal(ownerRouteBeforeMfa.status, 403, 'Owner administration must be blocked until MFA is enabled');
+    const ledgerBeforeMfa = await api('/ledger/wallets', { token: firstToken });
+    assert.equal(ledgerBeforeMfa.status, 403, 'financial APIs must be blocked until Owner MFA is enabled');
+
     const setup = await api('/mfa/setup', { method: 'POST', token: firstToken, body: {} });
     assert.equal(setup.status, 200, JSON.stringify(setup.body));
     assert.ok(setup.body.secret);
