@@ -1,0 +1,37 @@
+DUB WINDOWS LEDGER — INSTALLATION GUIDE
+Developer: Shakeel Faisal
+Base: Debian GNU/Linux 13 (Trixie), 64-bit (amd64)
+Desktop: XFCE with a Windows-inspired configuration target
+Language: English (United States), en_US.UTF-8
+Keyboard: US
+
+IMPORTANT PRODUCT STATUS
+This is a Debian-based Linux operating system, not Microsoft Windows.
+The initial build reuses the validated DUB LEDGER 14.1 PRO Debian/XFCE build kit.
+The Windows-inspired branding and desktop configuration are being developed separately.
+Android runtime and Google Play are NOT included or verified in this build. Do not assume Android apps will run.
+Google Play availability is conditional on runtime compatibility, licensing, certification, and successful testing.
+
+BEFORE INSTALLATION
+1. Back up all personal files to separate storage.
+2. Boot and test the live environment before installing.
+3. Use manual partitioning only. NEVER choose "Guided - use entire disk".
+4. Identify the target system partition by disk, capacity, filesystem, and partition number.
+5. Format only the partition explicitly selected for the Linux root mount point (/).
+6. Do not delete or format other data partitions (including D: or E: partitions).
+7. On UEFI systems, mount the existing EFI System Partition at /boot/efi and do not format it.
+8. Review the installer's final partition summary carefully. Cancel if any unintended partition will be changed.
+9. Formatting a partition erases its contents. No data-preservation guarantee is made without reviewing the actual target disk layout.
+
+HARDWARE TESTING
+Wi-Fi, Bluetooth, graphics, audio, suspend, and installer behavior depend on the computer's hardware and firmware. Test them on the target device.
+A successful cloud build or static ISO inspection is not proof that the ISO boots on every PC.
+Test in a virtual machine first, then on a spare/test computer where possible.
+
+DOWNLOAD VERIFICATION
+Verify the ISO using the SHA256SUMS.txt file supplied with the same release artifact.
+Keep the ISO and checksum together.
+
+PROJECT
+Source repository: https://github.com/faisaldub9900/Dub-ledger-
+Release branch: dub-windows-ledger
