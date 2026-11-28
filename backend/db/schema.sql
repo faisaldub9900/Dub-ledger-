@@ -102,3 +102,17 @@ COMMIT;
 -- Safe for databases created before MFA columns were introduced.
 ALTER TABLE app_users ADD COLUMN IF NOT EXISTS mfa_secret_enc TEXT;
 ALTER TABLE app_users ADD COLUMN IF NOT EXISTS mfa_pending_secret_enc TEXT;
+
+-- Ledger transaction detail and clearing-account fields; safe for existing databases.
+ALTER TABLE wallets ADD COLUMN IF NOT EXISTS is_system BOOLEAN NOT NULL DEFAULT FALSE;
+ALTER TABLE ledger_transactions ADD COLUMN IF NOT EXISTS source_wallet_id UUID REFERENCES wallets(id);
+ALTER TABLE ledger_transactions ADD COLUMN IF NOT EXISTS destination_wallet_id UUID REFERENCES wallets(id);
+ALTER TABLE ledger_transactions ADD COLUMN IF NOT EXISTS amount_minor BIGINT;
+ALTER TABLE ledger_transactions ADD COLUMN IF NOT EXISTS currency CHAR(3);
+ALTER TABLE ledger_transactions ADD COLUMN IF NOT EXISTS rejection_reason TEXT;
+CREATE INDEX IF NOT EXISTS ledger_transactions_created_by_time
+ ON ledger_transactions(created_by,created_at DESC);
+CREATE INDEX IF NOT EXISTS ledger_transactions_source_wallet
+ ON ledger_transactions(source_wallet_id);
+CREATE INDEX IF NOT EXISTS ledger_transactions_destination_wallet
+ ON ledger_transactions(destination_wallet_id);
