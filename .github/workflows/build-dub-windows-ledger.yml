@@ -144,7 +144,7 @@ jobs:
           SUPPORT_URL="https://github.com/faisaldub9900/Dub-ledger-/issues"
           OS
 
-          cat > "$BUILD_DIR/config/includes.chroot/etc/skel/Desktop/DUB-LEDGER-14.1-PRO-INSTALLATION-IMPORTANT.txt" <<'NOTICE'
+          cat > "$BUILD_DIR/config/includes.chroot/etc/skel/Desktop/DUB-WINDOWS-LEDGER-INSTALLATION-IMPORTANT.txt" <<'NOTICE'
           DUB WINDOWS LEDGER — IMPORTANT INSTALLATION SAFETY
           This is Debian GNU/Linux based, not Microsoft Windows. Back up files first.
           Android runtime and Google Play are not included or verified in this release.
@@ -166,7 +166,7 @@ jobs:
               <property name="screen0" type="empty">
                 <property name="monitor0" type="empty">
                   <property name="workspace0" type="empty">
-                    <property name="last-image" type="string" value="/usr/share/backgrounds/dub-ledger/dub-ledger-desktop.png"/>
+                    <property name="last-image" type="string" value="/usr/share/backgrounds/dub-windows-ledger/desktop.png"/>
                     <property name="image-style" type="int" value="5"/>
                   </property>
                 </property>
@@ -190,13 +190,13 @@ jobs:
           set -euxo pipefail
           test -s assets/dub-windows-ledger-wallpaper.svg
           test -s assets/dub-windows-ledger-boot-emblem.svg
-          BG="$BUILD_DIR/config/includes.chroot/usr/share/backgrounds/dub-ledger"
+          BG="$BUILD_DIR/config/includes.chroot/usr/share/backgrounds/dub-windows-ledger"
           THEME="$BUILD_DIR/config/includes.chroot/usr/share/plymouth/themes/dub-windows-ledger"
           mkdir -p "$BG" "$THEME"
-          rsvg-convert -w 1920 -h 1080 assets/dub-windows-ledger-wallpaper.svg -o "$BG/dub-ledger-desktop.png"
+          rsvg-convert -w 1920 -h 1080 assets/dub-windows-ledger-wallpaper.svg -o "$BG/desktop.png"
           rsvg-convert -w 512 -h 512 assets/dub-windows-ledger-boot-emblem.svg -o "$THEME/boot-emblem.png"
-          file "$BG/dub-ledger-desktop.png" "$THEME/boot-emblem.png"
-          test -s "$BG/dub-ledger-desktop.png"
+          file "$BG/desktop.png" "$THEME/boot-emblem.png"
+          test -s "$BG/desktop.png"
           test -s "$THEME/boot-emblem.png"
 
       - name: Add animated blue-gold Plymouth startup identity
@@ -274,11 +274,11 @@ jobs:
           set -euxo pipefail
           BRAND_HOOK="$BUILD_DIR/config/hooks/normal/0500-dub-ledger-branding.hook.chroot"
           if [ -f "$BRAND_HOOK" ]; then
-            sed -i 's/DUB LEDGER WINDOWS 1.0/DUB WINDOWS LEDGER/g; s/DUB LEDGER 14.01/DUB WINDOWS LEDGER/g; s/DUB LEDGER 14.1 PRO/DUB WINDOWS LEDGER/g; s/SHAKEEL FAYSAL DUB/SHAKEEL FAISAL/g' "$BRAND_HOOK"
+            sed -i 's/DUB LEDGER WINDOWS 1.0/DUB WINDOWS LEDGER/g; s/DUB LEDGER 14.01/DUB WINDOWS LEDGER/g; s/DUB WINDOWS LEDGER/DUB WINDOWS LEDGER/g; s/SHAKEEL FAYSAL DUB/SHAKEEL FAISAL/g' "$BRAND_HOOK"
           fi
           AUTO_CONFIG="$BUILD_DIR/auto/config"
           sed -i -E 's/^([[:space:]]*)lb[[:space:]]+config([[:space:]]|$)/\1lb config noauto\2/' "$AUTO_CONFIG"
-          sed -i 's/DUB LEDGER WINDOWS/DUB WINDOWS LEDGER/g; s/DUB LEDGER 14.01/DUB WINDOWS LEDGER/g; s/DUB LEDGER 14.1 PRO/DUB WINDOWS LEDGER/g; s/DUB_LEDGER/DUB_WINDOWS_LEDGER/g' "$AUTO_CONFIG"
+          sed -i 's/DUB LEDGER WINDOWS/DUB WINDOWS LEDGER/g; s/DUB LEDGER 14.01/DUB WINDOWS LEDGER/g; s/DUB WINDOWS LEDGER/DUB WINDOWS LEDGER/g; s/DUB_LEDGER/DUB_WINDOWS_LEDGER/g' "$AUTO_CONFIG"
           chmod +x "$AUTO_CONFIG"
           grep -q 'lb config noauto' "$AUTO_CONFIG"
           grep -q 'DUB WINDOWS LEDGER' "$AUTO_CONFIG"
@@ -313,7 +313,7 @@ jobs:
           grep -q 'DUB WINDOWS LEDGER' validation/os-release.txt
           unsquashfs -cat validation/filesystem.squashfs usr/share/plymouth/themes/dub-windows-ledger/dub-windows-ledger.script > validation/plymouth-script.txt
           grep -q 'boot-emblem.png' validation/plymouth-script.txt
-          unsquashfs -cat validation/filesystem.squashfs usr/share/backgrounds/dub-ledger/dub-ledger-desktop.png | file - | grep -q 'PNG image data'
+          unsquashfs -cat validation/filesystem.squashfs usr/share/backgrounds/dub-windows-ledger/desktop.png | file - | grep -q 'PNG image data'
           grep -q 'SHAKEEL FAISAL' validation/plymouth-script.txt
           {
             echo "DUB WINDOWS LEDGER static ISO validation"
