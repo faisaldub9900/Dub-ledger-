@@ -68,7 +68,7 @@ router.post('/verify', authenticateSession, async (req, res, next) => {
     );
     await pool.query(
       `INSERT INTO audit_events (actor_user_id,event_type,target_type,target_id)
-       VALUES ($1,'mfa_enabled','app_user',$1)`,
+       VALUES ($1::uuid,'mfa_enabled','app_user',$1::text)`,
       [req.user.id]
     );
     // Force a fresh login so the newly enabled second factor is required.
