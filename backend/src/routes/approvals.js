@@ -4,6 +4,7 @@ const express = require('express');
 const { pool } = require('../db');
 const { authenticateSession } = require('../auth');
 const { requireOwner } = require('../authz');
+const { isUuid } = require('../ids');
 
 const router = express.Router();
 router.use(authenticateSession, requireOwner);
@@ -20,6 +21,7 @@ router.get('/pending', async (_req,res,next) => {
 });
 
 router.post('/:id/approve', async (req,res,next) => {
+  if (!isUuid(req.params.id)) return res.status(400).json({ error: 'Valid transaction ID is required' });
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
@@ -112,6 +114,7 @@ router.post('/:id/approve', async (req,res,next) => {
 });
 
 router.post('/:id/reject', async (req,res,next) => {
+  if (!isUuid(req.params.id)) return res.status(400).json({ error: 'Valid transaction ID is required' });
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
