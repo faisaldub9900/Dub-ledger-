@@ -47,7 +47,7 @@ router.post('/wallets', async (req, res, next) => {
     );
     await pool.query(
       `INSERT INTO audit_events(actor_user_id,event_type,target_type,target_id,details)
-       VALUES($1,'wallet_created','wallet',$2,jsonb_build_object('name',$3,'currency',$4))`,
+       VALUES($1,'wallet_created','wallet',$2,jsonb_build_object('name',$3::text,'currency',$4::text))`,
       [req.user.id,result.rows[0].id,name,currency]
     );
     return res.status(201).json({ wallet: { ...result.rows[0], balance_minor: '0' } });
@@ -100,7 +100,7 @@ router.post('/transactions', async (req, res, next) => {
     );
     await client.query(
       `INSERT INTO audit_events(actor_user_id,event_type,target_type,target_id,details)
-       VALUES($1,'transaction_requested','ledger_transaction',$2,jsonb_build_object('type',$3,'amount_minor',$4,'currency',$5))`,
+       VALUES($1,'transaction_requested','ledger_transaction',$2,jsonb_build_object('type',$3::text,'amount_minor',$4::text,'currency',$5::text))`,
       [req.user.id,result.rows[0].id,type,amountMinor,currency]
     );
     await client.query('COMMIT');
