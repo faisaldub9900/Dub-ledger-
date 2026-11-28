@@ -36,6 +36,9 @@ Never put a real password in GitHub files, workflow YAML, screenshots, or chat. 
 - `POST /auth/login` — email/password; MFA-enabled users must also send `mfa_code`
 - `GET /auth/me` — current session user; send `Authorization: Bearer <token>`
 - `POST /auth/logout` — revoke the current session
+- `GET /owner/users` — Owner-only user list
+- `POST /owner/users` — Owner-only creation of a normal user (cannot create another Owner)
+- `PATCH /owner/users/:id/status` — Owner-only user activation/deactivation; revokes that user's sessions
 - `POST /mfa/setup` — authenticated user starts authenticator-app enrollment
 - `POST /mfa/verify` — authenticated user confirms a six-digit authenticator code and enables MFA
 
