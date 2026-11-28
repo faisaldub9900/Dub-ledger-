@@ -120,7 +120,7 @@ router.post('/:id/reject', async (req,res,next) => {
               rejection_reason=$3
        WHERE id=$1 AND status='pending'
        RETURNING id`,
-      [req.params.id,req.user.id,typeof req.body.reason === 'string' ? req.body.reason.trim().slice(0,500) : 'Rejected by Owner']
+      [req.params.id,req.user.id,req.body && typeof req.body.reason === 'string' ? req.body.reason.trim().slice(0,500) : 'Rejected by Owner']
     );
     if (!result.rowCount) {
       await client.query('ROLLBACK');
