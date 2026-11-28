@@ -102,7 +102,7 @@ router.post('/:id/approve', async (req,res,next) => {
     );
     await client.query(
       `INSERT INTO audit_events(actor_user_id,event_type,target_type,target_id,details)
-       VALUES($1,'transaction_approved','ledger_transaction',$2,jsonb_build_object('amount_minor',$3,'currency',$4))`,
+       VALUES($1,'transaction_approved','ledger_transaction',$2,jsonb_build_object('amount_minor',$3::text,'currency',$4::text))`,
       [req.user.id,tx.id,amount,currency]
     );
     await client.query('COMMIT');
