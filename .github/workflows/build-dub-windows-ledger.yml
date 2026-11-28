@@ -330,12 +330,75 @@ jobs:
             echo "Review manual partition choices on the target computer before installing."
           } > validation/VALIDATION-REPORT.txt
 
-      - name: Upload ISO and validation reports
+      - name: Split ISO into phone-friendly download parts
+        shell: bash
+        run: |
+          set -euxo pipefail
+          mkdir -p output/parts
+          split -b 450M -d -a 2 output/DUB-WINDOWS-LEDGER-amd64.iso output/parts/DUB-WINDOWS-LEDGER.iso.part-
+          ls -lh output/parts/
+
+      - name: Upload ISO part 00
         uses: actions/upload-artifact@v4
         with:
-          name: DUB-WINDOWS-LEDGER-ISO
+          name: DUB-WINDOWS-LEDGER-PART-00
+          path: output/parts/*part-00
+          if-no-files-found: ignore
+          retention-days: 14
+
+      - name: Upload ISO part 01
+        uses: actions/upload-artifact@v4
+        with:
+          name: DUB-WINDOWS-LEDGER-PART-01
+          path: output/parts/*part-01
+          if-no-files-found: ignore
+          retention-days: 14
+
+      - name: Upload ISO part 02
+        uses: actions/upload-artifact@v4
+        with:
+          name: DUB-WINDOWS-LEDGER-PART-02
+          path: output/parts/*part-02
+          if-no-files-found: ignore
+          retention-days: 14
+
+      - name: Upload ISO part 03
+        uses: actions/upload-artifact@v4
+        with:
+          name: DUB-WINDOWS-LEDGER-PART-03
+          path: output/parts/*part-03
+          if-no-files-found: ignore
+          retention-days: 14
+
+      - name: Upload ISO part 04
+        uses: actions/upload-artifact@v4
+        with:
+          name: DUB-WINDOWS-LEDGER-PART-04
+          path: output/parts/*part-04
+          if-no-files-found: ignore
+          retention-days: 14
+
+      - name: Upload ISO part 05
+        uses: actions/upload-artifact@v4
+        with:
+          name: DUB-WINDOWS-LEDGER-PART-05
+          path: output/parts/*part-05
+          if-no-files-found: ignore
+          retention-days: 14
+
+      - name: Upload ISO part 06
+        uses: actions/upload-artifact@v4
+        with:
+          name: DUB-WINDOWS-LEDGER-PART-06
+          path: output/parts/*part-06
+          if-no-files-found: ignore
+          retention-days: 14
+
+      - name: Upload installation guide and validation reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: DUB-WINDOWS-LEDGER-REPORTS
           path: |
-            output/DUB-WINDOWS-LEDGER-amd64.iso
             output/DUB-WINDOWS-LEDGER-INSTALL-GUIDE-EN-US.txt
             output/SHA256SUMS.txt
             validation/VALIDATION-REPORT.txt
