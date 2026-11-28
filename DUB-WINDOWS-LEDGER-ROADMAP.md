@@ -36,3 +36,18 @@ The baseline is **not** Microsoft Windows and does **not** currently include a w
 ## Release gate
 
 Do not label this project complete until the Windows-inspired desktop is present in the ISO, Android runtime tests pass (or the feature is clearly marked unsupported on the target hardware), the ISO boots in a VM, installer partition choices are reviewed, and checksums and installation instructions are published.
+
+## Implementation progress (2026-11-28)
+
+Completed in the `dub-windows-ledger` branch:
+- Added a dedicated GitHub Actions workflow at `.github/workflows/build-dub-windows-ledger.yml` to build an amd64 ISO from the existing Debian 13/XFCE build kit.
+- Added a new DUB WINDOWS LEDGER desktop wallpaper and boot emblem.
+- Updated the build configuration to write the DUB WINDOWS LEDGER OS identity and the developer credit SHAKEEL FAISAL.
+- Added XFCE desktop utilities and the English (United States) installation/safety guide.
+- Added static ISO checks for OS identity, boot metadata, wallpaper, Plymouth identity, and SHA256 checksum generation.
+
+Not yet verified / still required:
+- The new branch ISO build must complete successfully and its artifact must be inspected.
+- VM boot and installer partition-screen review are still required.
+- Physical Wi-Fi, Bluetooth, graphics, audio, and suspend tests are still required.
+- Android runtime and Google Play are not included or verified. These remain separate compatibility work and must not be represented as working.
