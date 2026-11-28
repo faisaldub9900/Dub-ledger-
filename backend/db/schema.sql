@@ -11,6 +11,7 @@ CREATE TABLE IF NOT EXISTS app_users (
  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+CREATE UNIQUE INDEX IF NOT EXISTS app_users_email_lower_unique ON app_users (lower(email));
 CREATE UNIQUE INDEX IF NOT EXISTS one_dub_owner_only ON app_users ((role)) WHERE role='owner';
 CREATE TABLE IF NOT EXISTS user_sessions (
  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -20,6 +21,7 @@ CREATE TABLE IF NOT EXISTS user_sessions (
  revoked_at TIMESTAMPTZ,
  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+CREATE INDEX IF NOT EXISTS user_sessions_user_expiry ON user_sessions(user_id,expires_at);
 CREATE TABLE IF NOT EXISTS wallets (
  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
  owner_user_id UUID NOT NULL REFERENCES app_users(id),
@@ -71,7 +73,6 @@ CREATE TABLE IF NOT EXISTS audit_events (
  details JSONB NOT NULL DEFAULT '{}'::jsonb,
  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
--- Posting service must write balanced entries atomically before status becomes posted.
 CREATE OR REPLACE FUNCTION assert_ledger_transaction_balanced()
 RETURNS TRIGGER LANGUAGE plpgsql AS $$
 DECLARE tx_id UUID; bad_count INTEGER;
