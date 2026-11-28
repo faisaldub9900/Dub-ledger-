@@ -48,7 +48,7 @@ router.post('/users', async (req, res, next) => {
     const created = result.rows[0];
     await pool.query(
       `INSERT INTO audit_events (actor_user_id,event_type,target_type,target_id,details)
-       VALUES ($1,'user_created','app_user',$2,jsonb_build_object('email',$3))`,
+       VALUES ($1,'user_created','app_user',$2,jsonb_build_object('email',$3::text))`,
       [req.user.id, created.id, created.email]
     );
     return res.status(201).json({ user: created });
@@ -84,7 +84,7 @@ router.patch('/users/:id/status', async (req, res, next) => {
     );
     await pool.query(
       `INSERT INTO audit_events (actor_user_id,event_type,target_type,target_id,details)
-       VALUES ($1,'user_status_changed','app_user',$2,jsonb_build_object('is_active',$3))`,
+       VALUES ($1,'user_status_changed','app_user',$2,jsonb_build_object('is_active',$3::boolean))`,
       [req.user.id, targetId, active]
     );
     return res.json({ user: result.rows[0], sessions_revoked: true });
