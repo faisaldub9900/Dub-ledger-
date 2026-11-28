@@ -46,6 +46,18 @@ Password hashes use Argon2id. Session tokens are random bearer tokens; only SHA-
 
 During MFA setup, the secret and otpauth URI are returned once to the authenticated user for adding to an authenticator app. Keep that response private. Do not enable MFA until you have added the secret to the authenticator app and verified its current code.
 
+## Wallets, ledger, and Owner approvals
+
+- `GET /ledger/wallets` — authenticated user's active wallet balances
+- `POST /ledger/wallets` — create a wallet; provide `name`, `currency` (ISO-style three-letter code), and `account_kind`
+- `POST /ledger/transactions` — request a deposit, withdrawal, or same-currency transfer; send a decimal `amount` as a string and a unique `Idempotency-Key` header (12-128 characters)
+- `GET /ledger/transactions` — user's transaction history
+- `GET /approvals/pending` — Owner-only pending requests
+- `POST /approvals/:id/approve` — Owner approves and posts the balanced ledger entries
+- `POST /approvals/:id/reject` — Owner rejects a pending request
+
+Every transaction remains pending until Owner approval. Deposits and withdrawals use an internal clearing wallet so every posted transaction balances to zero for its currency. Transfers cannot cross currencies or wallet owners. Withdrawals and transfers are rejected if the source wallet has insufficient funds. Amounts are stored as integer minor units; USD/PKR use two decimals, JPY zero, and KWD/BHD three. Currency conversion between different currencies is not yet enabled.
+
 ## Start and test
 
 - `npm test` — unit tests
