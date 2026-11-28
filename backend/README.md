@@ -2,7 +2,7 @@
 
 Developer / Creator: **Shakeel Faisal**
 
-This folder is the API-server foundation for DUB Digital System. It is separate from the Debian-based desktop ISO build kit.
+This folder contains the API backend foundation. It is separate from the Debian desktop ISO build kit.
 
 ## Requirements
 
@@ -10,41 +10,43 @@ This folder is the API-server foundation for DUB Digital System. It is separate 
 - npm
 - PostgreSQL 14 or newer
 
-## Run locally
+## Database setup
 
-1. Copy `.env.example` to `.env`.
-2. Create a dedicated PostgreSQL database and application role. Give the role only the permissions needed by this application.
-3. Put the private PostgreSQL connection string in `.env` as `DATABASE_URL`. Never commit real credentials.
-4. Review `HOST`, `PORT`, and set `CORS_ORIGIN` to the exact frontend origin.
+1. Copy `.env.example` to a private `.env` file.
+2. Create a dedicated PostgreSQL database and a restricted application role.
+3. Set `DATABASE_URL`; never commit real credentials.
+4. Set `DATABASE_SSL=true` when the database provider requires verified TLS.
 5. Run `npm install`.
-6. Run `npm run db:migrate` to apply the idempotent initial schema.
-7. Run `npm test` for the authorization middleware tests.
-8. Run `npm start`.
-9. Check `/health` for API liveness and `/ready` for database readiness.
+6. Run `npm run db:migrate` to apply the initial schema.
 
-For managed PostgreSQL requiring TLS, set `DATABASE_SSL=true`. Certificate verification remains enabled.
+## Create the one Owner account
 
-## Current scope
+The bootstrap script creates the first and only Owner. It refuses to run if an Owner already exists.
 
-- Express API process with security headers, strict JSON body limit, exact-origin CORS, and request rate limiting
-- PostgreSQL connection pool and database readiness endpoint
-- Initial PostgreSQL schema and repeatable schema application script
-- Server-side authorization middleware helpers
-- Unit tests for authenticated-user and owner-role middleware
-- No public sign-up, wallet mutation, or withdrawal endpoints
+Set `OWNER_EMAIL`, `OWNER_NAME`, and a strong `OWNER_PASSWORD` (at least 14 characters) temporarily in a private shell or secret manager, then run:
 
-## Important security status
+```sh
+npm run owner:bootstrap
+```
 
-This remains a **development foundation, not a production-ready financial server**. Database connectivity is implemented but has not been tested against a live database in this repository environment. Login/session verification, password hashing, MFA, owner bootstrap, financial posting services, approval workflows, and deployment are not yet implemented. The authorization helpers are not a substitute for a verified session-authentication layer.
+Do not put a real password in GitHub files, workflow YAML, screenshots, or chat. Remove the temporary password from the shell/secret store after bootstrap. The database enforces one Owner with a partial unique index. There is no public sign-up endpoint and no endpoint that can promote a user to Owner.
 
-Do not expose this API to the public internet or enter real financial data until the missing controls and integration tests are complete.
+## Start and test
 
-## Required next stages
+- `npm test` — unit tests
+- `npm start` — start API
+- `GET /health` — API process liveness
+- `GET /ready` — PostgreSQL readiness
+- `POST /auth/login` — email/password login
+- `GET /auth/me` — current session user; send `Authorization: Bearer <token>`
+- `POST /auth/logout` — revoke current session
 
-1. Inspect and integrate the existing DUB application source from the Cloud Build Kit archive.
-2. Implement secure owner bootstrap, password hashing, MFA, session verification, and session revocation.
-3. Add audited, approval-gated transfers and withdrawals with atomic double-entry posting and idempotency.
-4. Add reconciliation, exchange-rate provenance, encrypted backups, restore tests, and offline synchronization rules.
-5. Run database integration tests and an independent security review before deployment.
+Sessions use cryptographically random bearer tokens; only SHA-256 token digests are stored in PostgreSQL. Passwords are hashed with Argon2id. Authentication requests have a separate rate limit. Session lifetime defaults to 12 hours and is capped at 7 days.
 
-The owner identity must be configured securely during deployment; no credentials or secrets belong in source control.
+MFA-enabled accounts are deliberately denied password-only sessions. The MFA challenge and enrollment flow are not yet implemented; do not enable `mfa_enabled` on an account until a tested MFA flow is deployed.
+
+## Security status
+
+This is still a **development foundation, not a production-ready financial service**. Login, session lookup/revocation, password hashing, and first-Owner bootstrap are implemented in source, but have not yet been exercised against a live PostgreSQL instance here. MFA, password reset, login notifications, account lockout, financial posting services, approval workflows, application integration, deployment, and independent security review remain outstanding.
+
+Do not expose the API publicly or enter real financial data until the outstanding controls and integration tests are complete. Use HTTPS in any deployed environment and keep database/network access restricted.
