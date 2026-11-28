@@ -3,21 +3,11 @@
 const express = require('express');
 const { pool } = require('../db');
 const { authenticateSession } = require('../auth');
+const { toMinorUnits } = require('../money');
 
 const router = express.Router();
 router.use(authenticateSession);
 
-function minorUnits(amount, currency) {
-  if (typeof amount !== 'string' || !/^(0|[1-9]\d*)(\.\d+)?$/.test(amount)) return null;
-  const digits = currency === 'JPY' ? 0 : (currency === 'KWD' || currency === 'BHD' ? 3 : 2);
-  const parts = amount.split('.');
-  if ((parts[1] || '').length > digits) return null;
-  const whole = BigInt(parts[0]);
-  const fraction = BigInt(((parts[1] || '').padEnd(digits, '0')) || '0');
-  const value = whole * (10n ** BigInt(digits)) + fraction;
-  if (value <= 0n || value > 9000000000000000n) return null;
-  return value.toString();
-}
 
 function currencyCode(value) {
   return typeof value === 'string' && /^[A-Z]{3}$/.test(value) ? value : null;
@@ -73,7 +63,7 @@ router.post('/transactions', async (req, res, next) => {
     const type = body.transaction_type;
     const allowed = ['deposit','withdrawal','transfer'];
     const currency = currencyCode(body.currency);
-    const amountMinor = minorUnits(body.amount, currency || '');
+    const amountMinor = currency ? toMinorUnits(body.amount, currency) : null;
     const description = typeof body.description === 'string' ? body.description.trim().slice(0,500) : '';
     const idempotencyKey = req.get('Idempotency-Key') || '';
     if (!allowed.includes(type) || !currency || !amountMinor ||
