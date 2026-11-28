@@ -6,6 +6,7 @@ const express = require('express');
 const helmet = require('helmet');
 const cors = require('cors');
 const rateLimit = require('express-rate-limit');
+const { checkDatabase, closeDatabase } = require('./db');
 
 const app = express();
 const port = Number.parseInt(process.env.PORT || '8080', 10);
@@ -36,12 +37,26 @@ app.use(rateLimit({
   legacyHeaders: false
 }));
 
+// Liveness: confirms that the API process is running.
 app.get('/health', (_req, res) => {
   res.status(200).json({
     service: 'DUB Digital System API',
     status: 'ok',
     environment: process.env.NODE_ENV || 'development'
   });
+});
+
+// Readiness: confirms that the configured PostgreSQL database responds.
+app.get('/ready', async (_req, res) => {
+  try {
+    await checkDatabase();
+    return res.status(200).json({ status: 'ready', database: 'connected' });
+  } catch (_error) {
+    return res.status(503).json({
+      status: 'not_ready',
+      database: 'unavailable'
+    });
+  }
 });
 
 // No public registration, wallet mutation, or withdrawal endpoints are exposed.
@@ -61,10 +76,25 @@ const server = app.listen(port, host, () => {
   console.log(`DUB Digital System API listening on ${host}:${port}`);
 });
 
-function shutdown(signal) {
-  console.log(`${signal} received; closing server`);
-  server.close(() => process.exit(0));
-  setTimeout(() => process.exit(1), 10000).unref();
+let shuttingDown = false;
+async function shutdown(signal) {
+  if (shuttingDown) return;
+  shuttingDown = true;
+  console.log(`${signal} received; closing API and database pool`);
+
+  const forceExit = setTimeout(() => process.exit(1), 10000);
+  forceExit.unref();
+
+  server.close(async () => {
+    try {
+      await closeDatabase();
+      clearTimeout(forceExit);
+      process.exit(0);
+    } catch (error) {
+      console.error('Shutdown error:', error.message);
+      process.exit(1);
+    }
+  });
 }
 
 process.on('SIGTERM', () => shutdown('SIGTERM'));
