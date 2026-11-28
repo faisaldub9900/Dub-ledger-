@@ -1,7 +1,7 @@
 'use strict';
 
 const express = require('express');
-const { authenticateSession, login, logout } = require('../authz-session');
+const { authenticateSession, login, logout } = require('../auth');
 
 const router = express.Router();
 
