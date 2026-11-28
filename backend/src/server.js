@@ -8,15 +8,13 @@ const cors = require('cors');
 const rateLimit = require('express-rate-limit');
 const { checkDatabase, closeDatabase } = require('./db');
 const authRoutes = require('./routes/auth');
+const mfaRoutes = require('./routes/mfa');
 
 const app = express();
 const port = Number.parseInt(process.env.PORT || '8080', 10);
 const host = process.env.HOST || '127.0.0.1';
 const allowedOrigin = process.env.CORS_ORIGIN;
-
-if (!Number.isInteger(port) || port < 1 || port > 65535) {
-  throw new Error('PORT must be a valid TCP port');
-}
+if (!Number.isInteger(port) || port < 1 || port > 65535) throw new Error('PORT must be a valid TCP port');
 
 app.disable('x-powered-by');
 app.use(helmet());
@@ -30,21 +28,13 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: false
 }));
-app.use(rateLimit({
-  windowMs: 60 * 1000,
-  limit: 60,
-  standardHeaders: 'draft-7',
-  legacyHeaders: false
+app.use(rateLimit({ windowMs: 60000, limit: 60, standardHeaders: 'draft-7', legacyHeaders: false }));
+
+app.get('/health', (_req, res) => res.status(200).json({
+  service: 'DUB Digital System API',
+  status: 'ok',
+  environment: process.env.NODE_ENV || 'development'
 }));
-
-app.get('/health', (_req, res) => {
-  res.status(200).json({
-    service: 'DUB Digital System API',
-    status: 'ok',
-    environment: process.env.NODE_ENV || 'development'
-  });
-});
-
 app.get('/ready', async (_req, res) => {
   try {
     await checkDatabase();
@@ -54,30 +44,22 @@ app.get('/ready', async (_req, res) => {
   }
 });
 
-// No public registration route exists. Login is separately rate-limited.
-app.use('/auth', rateLimit({
+const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   limit: 10,
   standardHeaders: 'draft-7',
   legacyHeaders: false,
   message: { error: 'Too many authentication attempts; try again later' }
-}), authRoutes);
-
-app.use((_req, res) => {
-  res.status(404).json({ error: 'Not found' });
 });
-
+app.use('/auth', authLimiter, authRoutes);
+app.use('/mfa', authLimiter, mfaRoutes);
+app.use((_req, res) => res.status(404).json({ error: 'Not found' }));
 app.use((err, _req, res, _next) => {
-  const message = process.env.NODE_ENV === 'production'
-    ? 'Request could not be processed'
-    : err.message;
+  const message = process.env.NODE_ENV === 'production' ? 'Request could not be processed' : err.message;
   res.status(400).json({ error: message });
 });
 
-const server = app.listen(port, host, () => {
-  console.log(`DUB Digital System API listening on ${host}:${port}`);
-});
-
+const server = app.listen(port, host, () => console.log(`DUB Digital System API listening on ${host}:${port}`));
 let shuttingDown = false;
 async function shutdown(signal) {
   if (shuttingDown) return;
@@ -96,6 +78,5 @@ async function shutdown(signal) {
     }
   });
 }
-
 process.on('SIGTERM', () => shutdown('SIGTERM'));
 process.on('SIGINT', () => shutdown('SIGINT'));
