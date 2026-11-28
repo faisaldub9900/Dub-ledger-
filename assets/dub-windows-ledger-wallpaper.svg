@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080">
+<defs>
+ <linearGradient id="bg" x2="1" y2="1"><stop stop-color="#050b1c"/><stop offset=".55" stop-color="#102a50"/><stop offset="1" stop-color="#020713"/></linearGradient>
+ <radialGradient id="glow"><stop stop-color="#287bd2" stop-opacity=".45"/><stop offset="1" stop-color="#07152c" stop-opacity="0"/></radialGradient>
+ <linearGradient id="gold" x2="1" y2="1"><stop stop-color="#fff0ad"/><stop offset=".5" stop-color="#d49b38"/><stop offset="1" stop-color="#8b5b18"/></linearGradient>
+ <filter id="shadow"><feGaussianBlur stdDeviation="28"/></filter>
+</defs>
+<rect width="1920" height="1080" fill="url(#bg)"/>
+<circle cx="960" cy="470" r="570" fill="url(#glow)"/>
+<path d="M0 860 Q480 700 960 900 T1920 820 V1080 H0Z" fill="#020711" opacity=".65"/>
+<g opacity=".18" stroke="#6ea8e8" fill="none"><path d="M0 200H1920M0 320H1920M0 440H1920M0 560H1920M0 680H1920"/><path d="M240 0V1080M480 0V1080M720 0V1080M960 0V1080M1200 0V1080M1440 0V1080M1680 0V1080"/></g>
+<g transform="translate(960 400)">
+ <rect x="-135" y="-135" width="120" height="120" rx="18" fill="#2d91e8" stroke="url(#gold)" stroke-width="7"/>
+ <rect x="15" y="-135" width="120" height="120" rx="18" fill="#1768b5" stroke="url(#gold)" stroke-width="7"/>
+ <rect x="-135" y="15" width="120" height="120" rx="18" fill="#1768b5" stroke="url(#gold)" stroke-width="7"/>
+ <rect x="15" y="15" width="120" height="120" rx="18" fill="#2d91e8" stroke="url(#gold)" stroke-width="7"/>
+</g>
+<text x="960" y="670" text-anchor="middle" fill="#f5f7ff" font-family="Segoe UI,Arial,sans-serif" font-size="76" font-weight="700" letter-spacing="5">DUB WINDOWS LEDGER</text>
+<rect x="690" y="715" width="540" height="3" rx="2" fill="url(#gold)"/>
+<text x="960" y="775" text-anchor="middle" fill="#d8e5f7" font-family="Segoe UI,Arial,sans-serif" font-size="30" letter-spacing="7">DEVELOPER  •  SHAKEEL FAISAL</text>
+<text x="960" y="1000" text-anchor="middle" fill="#8fa8c8" font-family="Segoe UI,Arial,sans-serif" font-size="22" letter-spacing="4">64-BIT DESKTOP  •  DEBIAN-BASED LINUX</text>
+</svg>
