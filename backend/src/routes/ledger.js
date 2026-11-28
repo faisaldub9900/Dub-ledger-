@@ -4,6 +4,7 @@ const express = require('express');
 const { pool } = require('../db');
 const { authenticateSession } = require('../auth');
 const { toMinorUnits } = require('../money');
+const { isUuid } = require('../ids');
 
 const router = express.Router();
 router.use(authenticateSession);
@@ -72,7 +73,7 @@ router.post('/transactions', async (req, res, next) => {
     }
     const sourceId = type === 'withdrawal' || type === 'transfer' ? body.source_wallet_id : null;
     const destinationId = type === 'deposit' || type === 'transfer' ? body.destination_wallet_id : null;
-    if ((sourceId && typeof sourceId !== 'string') || (destinationId && typeof destinationId !== 'string') ||
+    if ((sourceId && !isUuid(sourceId)) || (destinationId && !isUuid(destinationId)) ||
         (type === 'transfer' && sourceId === destinationId)) {
       return res.status(400).json({ error: 'Valid distinct source and destination wallets are required' });
     }
