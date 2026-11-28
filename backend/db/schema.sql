@@ -8,6 +8,8 @@ CREATE TABLE IF NOT EXISTS app_users (
  role TEXT NOT NULL DEFAULT 'user' CHECK (role IN ('owner','user')),
  is_active BOOLEAN NOT NULL DEFAULT TRUE,
  mfa_enabled BOOLEAN NOT NULL DEFAULT FALSE,
+ mfa_secret_enc TEXT,
+ mfa_pending_secret_enc TEXT,
  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
@@ -96,3 +98,7 @@ AFTER INSERT OR UPDATE OF status ON ledger_transactions
 DEFERRABLE INITIALLY DEFERRED
 FOR EACH ROW EXECUTE FUNCTION assert_ledger_transaction_balanced();
 COMMIT;
+
+-- Safe for databases created before MFA columns were introduced.
+ALTER TABLE app_users ADD COLUMN IF NOT EXISTS mfa_secret_enc TEXT;
+ALTER TABLE app_users ADD COLUMN IF NOT EXISTS mfa_pending_secret_enc TEXT;
