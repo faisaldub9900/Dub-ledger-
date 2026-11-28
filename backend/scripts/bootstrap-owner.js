@@ -57,7 +57,7 @@ async function main() {
     );
     await client.query(
       `INSERT INTO audit_events (event_type, target_type, target_id, details)
-       VALUES ('owner_bootstrapped', 'app_user', $1, jsonb_build_object('email', $2))`,
+       VALUES ('owner_bootstrapped', 'app_user', $1, jsonb_build_object('email', $2::text))`,
       [email, email]
     );
     await client.query('COMMIT');
