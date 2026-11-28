@@ -19,9 +19,33 @@ permissions:
 jobs:
   test:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: dub_test
+          POSTGRES_PASSWORD: dub_test_password
+          POSTGRES_DB: dub_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U dub_test -d dub_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
     defaults:
       run:
         working-directory: backend
+    env:
+      NODE_ENV: test
+      HOST: 127.0.0.1
+      PORT: 8099
+      DATABASE_URL: postgresql://dub_test:dub_test_password@127.0.0.1:5432/dub_test
+      DATABASE_SSL: 'false'
+      OWNER_EMAIL: owner@example.test
+      OWNER_NAME: DUB Integration Owner
+      OWNER_PASSWORD: Test-Only-Owner-Password-2026!
+      RUN_DB_INTEGRATION: 'true'
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -29,7 +53,15 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
       - name: Install dependencies
         run: npm install
-      - name: Run backend tests
+      - name: Generate ephemeral MFA encryption key
+        run: echo "MFA_ENCRYPTION_KEY=$(node -e "process.stdout.write(require('node:crypto').randomBytes(32).toString('base64'))")" >> "$GITHUB_ENV"
+      - name: Apply database schema
+        run: npm run db:migrate
+      - name: Create disposable test Owner
+        run: npm run owner:bootstrap
+      - name: Run unit and PostgreSQL integration tests
         run: npm test
