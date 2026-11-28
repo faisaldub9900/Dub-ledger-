@@ -56,7 +56,7 @@ jobs:
       - name: Install dependencies
         run: npm install
       - name: Generate ephemeral MFA encryption key
-        run: echo "MFA_ENCRYPTION_KEY=$(node -e "process.stdout.write(require('node:crypto').randomBytes(32).toString('base64'))")" >> "$GITHUB_ENV"
+        run: node -e "require('node:fs').appendFileSync(process.env.GITHUB_ENV, 'MFA_ENCRYPTION_KEY=' + require('node:crypto').randomBytes(32).toString('base64') + '\\n')"
       - name: Apply database schema
         run: npm run db:migrate
       - name: Create disposable test Owner
