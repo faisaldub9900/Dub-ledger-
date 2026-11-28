@@ -21,7 +21,7 @@ async function authenticateSession(req, res, next) {
 
     const tokenHash = hashToken(match[1]);
     const result = await pool.query(
-      `SELECT u.id, u.email, u.display_name, u.role, u.is_active
+      `SELECT u.id, u.email, u.display_name, u.role, u.is_active, u.mfa_enabled
        FROM user_sessions s JOIN app_users u ON u.id = s.user_id
        WHERE s.token_hash = $1 AND s.revoked_at IS NULL AND s.expires_at > now()
        LIMIT 1`,
@@ -29,6 +29,11 @@ async function authenticateSession(req, res, next) {
     );
     const user = result.rows[0];
     if (!user || user.is_active !== true) return res.status(401).json({ error: 'Authentication required' });
+    const requestPath = (req.originalUrl || '').split('?')[0];
+    const ownerMfaSetupPaths = ['/mfa/setup', '/mfa/verify', '/auth/me', '/auth/logout'];
+    if (user.role === 'owner' && user.mfa_enabled !== true && !ownerMfaSetupPaths.includes(requestPath)) {
+      return res.status(403).json({ error: 'Owner MFA setup is required before accessing this service' });
+    }
     req.user = user;
     req.sessionTokenHash = tokenHash;
     return next();
