@@ -8,7 +8,7 @@ on:
       - '.github/workflows/build-dub-windows-ledger.yml'
       - '*.zip'
       - 'assets/**'
-      - 'DUB-LEDGER-14.01-INSTALL-GUIDE-URDU.txt'
+      - 'DUB-WINDOWS-LEDGER-INSTALL-GUIDE-EN-US.txt'
   workflow_dispatch:
 
 permissions:
@@ -100,6 +100,13 @@ jobs:
           arc-theme
           papirus-icon-theme
           xfce4-whiskermenu-plugin
+          xfce4-panel
+          xfce4-appfinder
+          xfce4-taskmanager
+          xfce4-terminal
+          thunar
+          xfce4-power-manager
+          xfce4-screenshooter
           fonts-noto
           fonts-noto-color-emoji
           locales
@@ -128,10 +135,10 @@ jobs:
 
           cat > "$BUILD_DIR/config/includes.chroot/etc/os-release" <<'OS'
           PRETTY_NAME="DUB WINDOWS LEDGER"
-          NAME="DUB LEDGER"
-          VERSION="14.1 PRO"
-          VERSION_ID="14.1"
-          ID=dub-ledger
+          NAME="DUB WINDOWS LEDGER"
+          VERSION="1.0"
+          VERSION_ID="1.0"
+          ID=dub-windows-ledger
           ID_LIKE=debian
           HOME_URL="https://github.com/faisaldub9900/Dub-ledger-"
           SUPPORT_URL="https://github.com/faisaldub9900/Dub-ledger-/issues"
@@ -140,6 +147,7 @@ jobs:
           cat > "$BUILD_DIR/config/includes.chroot/etc/skel/Desktop/DUB-LEDGER-14.1-PRO-INSTALLATION-IMPORTANT.txt" <<'NOTICE'
           DUB WINDOWS LEDGER — IMPORTANT INSTALLATION SAFETY
           This is Debian GNU/Linux based, not Microsoft Windows. Back up files first.
+          Android runtime and Google Play are not included or verified in this release.
           Choose MANUAL partitioning. NEVER choose "Guided - use entire disk".
           Identify the intended former Windows C: partition by disk, size and filesystem.
           Format ONLY the intended root partition mounted at /.
@@ -266,11 +274,11 @@ jobs:
           set -euxo pipefail
           BRAND_HOOK="$BUILD_DIR/config/hooks/normal/0500-dub-ledger-branding.hook.chroot"
           if [ -f "$BRAND_HOOK" ]; then
-            sed -i 's/DUB WINDOWS LEDGER 1.0/DUB WINDOWS LEDGER/g; s/DUB WINDOWS LEDGER/DUB WINDOWS LEDGER/g' "$BRAND_HOOK"
+            sed -i 's/DUB LEDGER WINDOWS 1.0/DUB WINDOWS LEDGER/g; s/DUB LEDGER 14.01/DUB WINDOWS LEDGER/g; s/DUB LEDGER 14.1 PRO/DUB WINDOWS LEDGER/g; s/SHAKEEL FAYSAL DUB/SHAKEEL FAISAL/g' "$BRAND_HOOK"
           fi
           AUTO_CONFIG="$BUILD_DIR/auto/config"
           sed -i -E 's/^([[:space:]]*)lb[[:space:]]+config([[:space:]]|$)/\1lb config noauto\2/' "$AUTO_CONFIG"
-          sed -i 's/DUB WINDOWS LEDGER/DUB WINDOWS LEDGER/g; s/DUB WINDOWS LEDGER/DUB WINDOWS LEDGER/g; s/DUB_LEDGER/DUB_WINDOWS_LEDGER/g' "$AUTO_CONFIG"
+          sed -i 's/DUB LEDGER WINDOWS/DUB WINDOWS LEDGER/g; s/DUB LEDGER 14.01/DUB WINDOWS LEDGER/g; s/DUB LEDGER 14.1 PRO/DUB WINDOWS LEDGER/g; s/DUB_LEDGER/DUB_WINDOWS_LEDGER/g' "$AUTO_CONFIG"
           chmod +x "$AUTO_CONFIG"
           grep -q 'lb config noauto' "$AUTO_CONFIG"
           grep -q 'DUB WINDOWS LEDGER' "$AUTO_CONFIG"
