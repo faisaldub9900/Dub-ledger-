@@ -7,6 +7,7 @@ const helmet = require('helmet');
 const cors = require('cors');
 const rateLimit = require('express-rate-limit');
 const { checkDatabase, closeDatabase } = require('./db');
+const authRoutes = require('./routes/auth');
 
 const app = express();
 const port = Number.parseInt(process.env.PORT || '8080', 10);
@@ -22,7 +23,6 @@ app.use(helmet());
 app.use(express.json({ limit: '32kb', strict: true }));
 app.use(cors({
   origin(origin, callback) {
-    // Non-browser clients may omit Origin. Browser origins must match exactly.
     if (!origin || origin === allowedOrigin) return callback(null, true);
     return callback(new Error('Origin not allowed'));
   },
@@ -37,7 +37,6 @@ app.use(rateLimit({
   legacyHeaders: false
 }));
 
-// Liveness: confirms that the API process is running.
 app.get('/health', (_req, res) => {
   res.status(200).json({
     service: 'DUB Digital System API',
@@ -46,21 +45,24 @@ app.get('/health', (_req, res) => {
   });
 });
 
-// Readiness: confirms that the configured PostgreSQL database responds.
 app.get('/ready', async (_req, res) => {
   try {
     await checkDatabase();
     return res.status(200).json({ status: 'ready', database: 'connected' });
   } catch (_error) {
-    return res.status(503).json({
-      status: 'not_ready',
-      database: 'unavailable'
-    });
+    return res.status(503).json({ status: 'not_ready', database: 'unavailable' });
   }
 });
 
-// No public registration, wallet mutation, or withdrawal endpoints are exposed.
-// Financial and owner-only routes must be added with server-side authorization.
+// No public registration route exists. Login is separately rate-limited.
+app.use('/auth', rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 10,
+  standardHeaders: 'draft-7',
+  legacyHeaders: false,
+  message: { error: 'Too many authentication attempts; try again later' }
+}), authRoutes);
+
 app.use((_req, res) => {
   res.status(404).json({ error: 'Not found' });
 });
@@ -81,10 +83,8 @@ async function shutdown(signal) {
   if (shuttingDown) return;
   shuttingDown = true;
   console.log(`${signal} received; closing API and database pool`);
-
   const forceExit = setTimeout(() => process.exit(1), 10000);
   forceExit.unref();
-
   server.close(async () => {
     try {
       await closeDatabase();
