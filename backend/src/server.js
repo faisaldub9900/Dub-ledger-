@@ -9,6 +9,7 @@ const rateLimit = require('express-rate-limit');
 const { checkDatabase, closeDatabase } = require('./db');
 const authRoutes = require('./routes/auth');
 const mfaRoutes = require('./routes/mfa');
+const ownerRoutes = require('./routes/owner');
 
 const app = express();
 const port = Number.parseInt(process.env.PORT || '8080', 10);
@@ -53,6 +54,7 @@ const authLimiter = rateLimit({
 });
 app.use('/auth', authLimiter, authRoutes);
 app.use('/mfa', authLimiter, mfaRoutes);
+app.use('/owner', ownerRoutes);
 app.use((_req, res) => res.status(404).json({ error: 'Not found' }));
 app.use((err, _req, res, _next) => {
   const message = process.env.NODE_ENV === 'production' ? 'Request could not be processed' : err.message;
