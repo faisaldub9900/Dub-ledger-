@@ -189,12 +189,12 @@ jobs:
         run: |
           set -euxo pipefail
           test -s assets/dub-windows-ledger-wallpaper.svg
-          test -s assets/dub-windows-ledger-boot-emblem.svg
+          test -s assets/dub-windows-ledger-emblem.svg
           BG="$BUILD_DIR/config/includes.chroot/usr/share/backgrounds/dub-windows-ledger"
           THEME="$BUILD_DIR/config/includes.chroot/usr/share/plymouth/themes/dub-windows-ledger"
           mkdir -p "$BG" "$THEME"
           rsvg-convert -w 1920 -h 1080 assets/dub-windows-ledger-wallpaper.svg -o "$BG/desktop.png"
-          rsvg-convert -w 512 -h 512 assets/dub-windows-ledger-boot-emblem.svg -o "$THEME/boot-emblem.png"
+          rsvg-convert -w 512 -h 512 assets/dub-windows-ledger-emblem.svg -o "$THEME/boot-emblem.png"
           file "$BG/desktop.png" "$THEME/boot-emblem.png"
           test -s "$BG/desktop.png"
           test -s "$THEME/boot-emblem.png"
