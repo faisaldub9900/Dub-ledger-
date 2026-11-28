@@ -335,6 +335,7 @@ jobs:
         run: |
           set -euxo pipefail
           mkdir -p output/parts
+          # Keep each downloadable part below the connector 512 MiB per-file limit.
           split -b 450M -d -a 2 output/DUB-WINDOWS-LEDGER-amd64.iso output/parts/DUB-WINDOWS-LEDGER.iso.part-
           ls -lh output/parts/
 
