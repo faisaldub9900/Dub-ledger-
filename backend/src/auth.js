@@ -13,7 +13,7 @@ function hashToken(token) {
 
 async function authenticateSession(req, res, next) {
   try {
-    const header = req.get('authorization') || '';
+    const header = typeof req.get === 'function' ? (req.get('authorization') || '') : '';
     const match = /^Bearer ([A-Za-z0-9_-]{40,})$/.exec(header);
     if (!match || !pool) {
       return res.status(401).json({ error: 'Authentication required' });
@@ -45,12 +45,9 @@ async function authenticateSession(req, res, next) {
 
 async function login(req, res, next) {
   try {
-    const email = typeof req.body.email === 'string'
-      ? req.body.email.trim().toLowerCase()
-      : '';
-    const password = typeof req.body.password === 'string'
-      ? req.body.password
-      : '';
+    const body = req.body && typeof req.body === 'object' ? req.body : {};
+    const email = typeof body.email === 'string' ? body.email.trim().toLowerCase() : '';
+    const password = typeof body.password === 'string' ? body.password : '';
 
     if (!email || !password || email.length > 254 || password.length > 1024) {
       return res.status(400).json({ error: 'Email and password are required' });
@@ -66,13 +63,21 @@ async function login(req, res, next) {
     );
     const user = result.rows[0];
 
-    // Same response for unknown, inactive, and incorrect-password accounts.
-    if (!user || user.is_active !== true ||
-        !(await argon2.verify(user.password_hash, password))) {
+    if (!user || user.is_active !== true) {
       return res.status(401).json({ error: 'Invalid email or password' });
     }
 
-    // Do not create a weaker session for an account that requires MFA.
+    let passwordMatches = false;
+    try {
+      passwordMatches = await argon2.verify(user.password_hash, password);
+    } catch (_error) {
+      passwordMatches = false;
+    }
+    if (!passwordMatches) {
+      return res.status(401).json({ error: 'Invalid email or password' });
+    }
+
+    // MFA-enabled accounts must never receive a password-only session.
     if (user.mfa_enabled) {
       return res.status(403).json({ error: 'MFA verification is required; password-only login is disabled' });
     }
